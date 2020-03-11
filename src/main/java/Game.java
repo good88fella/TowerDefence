@@ -1,7 +1,6 @@
 import entities.Enemy;
 import entities.GameMap;
 import entities.Tower;
-import jdk.internal.org.objectweb.asm.tree.analysis.Analyzer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,9 @@ public class Game {
     private boolean isGameOver = false;
 
     public static void main(String[] args) {
-
+        GameMap gameMap = new GameMap(50, 25);
+        gameMap.fillMap();
+        gameMap.draw();
     }
 
     public void createTower(double x, double y) {
@@ -25,4 +26,5 @@ public class Game {
     public void createEnemy() {
         enemies.add(new Enemy(gameMap.getStart().getX(), gameMap.getStart().getY()));
     }
+
 }
