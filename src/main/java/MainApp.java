@@ -1,3 +1,4 @@
+import entities.Enemy;
 import entities.Tower;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
@@ -6,12 +7,27 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import utils.Rect;
 import view.ShowFire;
 
 public class MainApp extends Application implements ShowFire {
     private double scale;
     private GraphicsContext gc;
+
+    private void addLines(double width, double height, Group group) {
+        for (int i = 0; i <= height; i++) {
+            Line line = new Line(0, i * scale, width * scale, i * scale);
+            line.setStroke(Color.LIGHTGREY);
+            group.getChildren().add(line);
+        }
+        for (int i = 0; i <= width; i++) {
+            Line line = new Line(i * scale, 0, i * scale, height * scale);
+            line.setStroke(Color.LIGHTGREY);
+            group.getChildren().add(line);
+        }
+    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -27,16 +43,14 @@ public class MainApp extends Application implements ShowFire {
         canvas.setOnMousePressed(event -> {
             gc.clearRect(100, 80, 300, 50);
             gc.fillText(String.format("x: %f, y: %f", event.getX(), event.getY()), 100 ,100);
-            Game.game.createTower(event.getX() / scale, event.getY() / scale);
+            Game.game.createTower((int)(event.getX() / scale), (int)(event.getY() / scale));
         });
         gc.setFill(Color.BLACK);
         gc.fillRect(10, 10, 100, 100);
         Group root = new Group();
-
+        addLines(width, height, root);
         root.getChildren().add(canvas);
-
         DrawField();
-
 
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
@@ -44,8 +58,13 @@ public class MainApp extends Application implements ShowFire {
         at.start();
     }
 
-    private void DrawFence() {
-
+    private void DrawFence(Rect rect) {
+        gc.setStroke(Color.BROWN);
+        gc.strokeRect(rect.getStart().getX() * scale,
+                rect.getStart().getY() * scale,
+                (rect.getEnd().getX() - rect.getStart().getX()) * scale + scale,
+                (rect.getEnd().getY() - rect.getStart().getY()) * scale + scale
+                );
     }
 
     private void DrawTower(Tower tower) {
@@ -69,27 +88,25 @@ public class MainApp extends Application implements ShowFire {
         gc.fillRoundRect(startX, startY - 6, scale * percentage, 4, 2, 2);
     }
 
+    private void DrawEnemy(Enemy enemy) {
+        gc.setFill(Color.CHOCOLATE);
+        gc.fillOval(enemy.getX() * scale, enemy.getY() * scale, scale, scale);
+    }
+
     private void DrawField() {
-        double width = Game.game.getGameMap().getWidth();
-        double height = Game.game.getGameMap().getHeight();
-        gc.setLineWidth(1);
-        gc.setStroke(Color.LIGHTGREY);
-        gc.setFill(Color.WHITE);
-        gc.fillRect(0,0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
-        for (int i = 0; i <= height; i++) {
-            gc.moveTo(0, i * scale);
-            gc.lineTo(gc.getCanvas().getWidth(), i * scale);
-            gc.stroke();
-        }
-        for (int j = 0; j <= width; j++) {
-            gc.moveTo(j * scale, 0);
-            gc.lineTo(j * scale, gc.getCanvas().getHeight());
-            gc.stroke();
-        }
+       // DrawGrid();
         for (Tower tower : Game.game.getTowers()) {
             DrawTower(tower);
         }
+        for (Rect rect : Game.game.getGameMap().getFieldsCoordinates()) {
+            DrawFence(rect);
+        }
+        for (Enemy enemy : Game.game.getEnemies()) {
+            DrawEnemy(enemy);
+        }
     }
+
+
 
     protected AnimationTimer at = new AnimationTimer(){
         @Override
@@ -100,6 +117,10 @@ public class MainApp extends Application implements ShowFire {
             }
             gc.clearRect(100, 200, 300, 50);
             gc.fillText(String.format("x: %d", now), 100 ,250);
+            if (Game.game.isNeedRedraw()) {
+                DrawField();
+                Game.game.setNeedRedraw(false);
+            }
         }
     };
 
