@@ -1,5 +1,8 @@
 package utils;
 
+import java.util.Iterator;
+import java.util.List;
+
 public abstract class GameObject {
 
     protected double x;
@@ -11,15 +14,57 @@ public abstract class GameObject {
     protected double currentHealth;
     protected double angle;
     protected boolean isAlive;
+    protected GameObject target;
+    protected boolean isShooting;
 
     public GameObject(double x, double y, double radius) {
         this.x = x;
         this.y = y;
         this.radius = radius;
         isAlive = true;
+        isShooting = false;
     }
 
-    public abstract void fire();
+    public abstract void upgrade();
+
+    protected void fireAll(List<? extends GameObject> list) {
+        if (list.isEmpty())
+            return;
+        if (target != null && target.isAlive() &&
+                 target.getClass().equals(list.get(0).getClass()) && getDistance(target) <= fireRange) {
+            isShooting = true;
+        } else {
+            GameObject tmpTarget = null;
+            double minDistance = Double.MAX_VALUE;
+            Iterator<? extends GameObject> itr = list.iterator();
+            while (itr.hasNext()) {
+                GameObject gameObject = itr.next();
+                if (gameObject.isAlive()) {
+                    double distance = getDistance(gameObject);
+                    if (distance <= fireRange && distance < minDistance) {
+                        tmpTarget = gameObject;
+                        minDistance = distance;
+                    }
+                } else {
+                    itr.remove();
+                }
+            }
+            target = tmpTarget;
+        }
+        if (target != null) {
+            target.currentHealth -= power;
+            angle = Math.atan2(target.y - y, target.x - x) * 180 / Math.PI + 180;
+            if (target.currentHealth <= 0) {
+                target.setAlive(false);
+            }
+        }
+    }
+
+    private double getDistance(GameObject gameObject) {
+        double dx = x - gameObject.x;
+        double dy = y - gameObject.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
     public double getX() {
         return x;
@@ -93,4 +138,19 @@ public abstract class GameObject {
         isAlive = alive;
     }
 
+    public GameObject getTarget() {
+        return target;
+    }
+
+    public void setTarget(GameObject target) {
+        this.target = target;
+    }
+
+    public boolean isShooting() {
+        return isShooting;
+    }
+
+    public void setShooting(boolean shooting) {
+        isShooting = shooting;
+    }
 }

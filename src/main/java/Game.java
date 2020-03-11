@@ -13,49 +13,11 @@ public class Game {
     private GameMap gameMap;
     private boolean needRedraw;
     private List<Enemy> enemies = new ArrayList<>();
-
-    public boolean isNeedRedraw() {
-        return needRedraw;
-    }
-
-    public void setNeedRedraw(boolean needRedraw) {
-        this.needRedraw = needRedraw;
-    }
-
-    public List<Tower> getTowers() {
-        return towers;
-    }
-
-    public List<Enemy> getEnemies() {
-        return enemies;
-    }
-
     private List<Tower> towers = new ArrayList<>();
     private boolean isGameOver = false;
-
-    public static void main(String[] args) throws InterruptedException {
-        Game game = new Game();
-
-    }
+    public static int enemyFinished = 0;
 
     public Game(){
-
-        Tower tower1 = new Tower(0, 1);
-        tower1.setCurrentHealth(100);
-        tower1.setMaxHealth(200);
-        tower1.setAngle(0);
-        this.towers.add(tower1);
-        Tower tower2 = new Tower(10, 10);
-        tower2.setMaxHealth(100);
-        tower2.setCurrentHealth(60);
-        tower2.setAngle(45);
-        this.towers.add(tower2);
-        Tower tower3 = new Tower(25, 18);
-        tower3.setMaxHealth(1000);
-        tower3.setCurrentHealth(350);
-        tower3.setAngle(210);
-        this.towers.add(tower3);
-
         this.gameMap = new GameMap(50, 25);
         this.gameMap.fillMap();
         this.gameMap.setStart(new Rect.Point(0, 1));
@@ -65,16 +27,30 @@ public class Game {
 
     public void runGame() throws InterruptedException {
         while (this.enemies.size() > 0) {
-            Iterator<Enemy> iter = this.enemies.iterator();
-            while (iter.hasNext()) {
-                Enemy enemy = iter.next();
-                if (enemy.isAlive())
-                    enemy.move(this.gameMap);
-                else
-                    iter.remove();
+            Iterator<Tower> iterTowers = this.towers.iterator();
+            while (iterTowers.hasNext()) {
+                Tower tower = iterTowers.next();
+                if (tower.isAlive()) {
+                    tower.fire(enemies);
+                } else {
+                    iterTowers.remove();
+                }
                 needRedraw = true;
-                Thread.sleep(100);
             }
+
+            Iterator<Enemy> iterEnemies = this.enemies.iterator();
+            while (iterEnemies.hasNext()) {
+                Enemy enemy = iterEnemies.next();
+                if (enemy.isAlive()) {
+                    enemy.fire(towers);
+                    if (enemy.move(this.gameMap))
+                        enemyFinished++;
+                } else {
+                    iterEnemies.remove();
+                }
+                needRedraw = true;
+            }
+            Thread.sleep(200);
         }
     }
 
@@ -94,4 +70,20 @@ public class Game {
     public void createEnemy() {
         enemies.add(new Enemy(gameMap.getStart().getX(), gameMap.getStart().getY()));
     }
+    public boolean isNeedRedraw() {
+        return needRedraw;
+    }
+
+    public void setNeedRedraw(boolean needRedraw) {
+        this.needRedraw = needRedraw;
+    }
+
+    public List<Tower> getTowers() {
+        return towers;
+    }
+
+    public List<Enemy> getEnemies() {
+        return enemies;
+    }
+
 }

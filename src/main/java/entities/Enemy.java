@@ -3,24 +3,34 @@ package entities;
 import utils.GameObject;
 import utils.Rect;
 
+import java.util.List;
+
 public class Enemy extends GameObject {
 
-    private int speed;
     private Rect.Point prevPoint;
 
     public Enemy(double x, double y) {
         super(x, y, 1);
+        fireRange = 3;
+        power = 1;
+        maxHealth = 100;
+        currentHealth = maxHealth;
+    }
+
+    public void fire(List<Tower> towers) {
+        super.fireAll(towers);
     }
 
     @Override
-    public void fire() {
-
+    public void upgrade() {
+        power++;
+        maxHealth += 10;
     }
 
-    public void move(GameMap gameMap) {
+    public boolean move(GameMap gameMap) {
         if (prevPoint != null && new Rect.Point(x, y).equals(gameMap.getFinish()) && isAlive) {
             isAlive = false;
-            return;
+            return true;
         }
 
         Rect.Point nextPoint;
@@ -34,6 +44,7 @@ public class Enemy extends GameObject {
         prevPoint.setY(y);
         x = nextPoint.getX();
         y = nextPoint.getY();
+        return false;
     }
 
     private Rect.Point getNextPoint(GameMap gameMap, double x, double y) {
@@ -51,14 +62,6 @@ public class Enemy extends GameObject {
                 gameMap.getMatrix()[(int) y][(int) (x - 1)] == '#')
             nextPoint = new Rect.Point(x - 1, y);
         return nextPoint;
-    }
-
-    public int getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(int speed) {
-        this.speed = speed;
     }
 
     public Rect.Point getPrevPoint() {
