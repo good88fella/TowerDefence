@@ -5,7 +5,6 @@ public class GameMap {
     private int width;
     private int height;
     private char[][] matrix;
-    private char[] wayToSuccess;
     private Point start;
     private Point finish;
 
@@ -71,13 +70,5 @@ public class GameMap {
 
     public void setMatrix(char[][] matrix) {
         this.matrix = matrix;
-    }
-
-    public char[] getWayToSuccess() {
-        return wayToSuccess;
-    }
-
-    public void setWayToSuccess(char[] wayToSuccess) {
-        this.wayToSuccess = wayToSuccess;
     }
 }

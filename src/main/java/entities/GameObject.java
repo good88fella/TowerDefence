@@ -4,6 +4,7 @@ public class GameObject {
 
     private double x;
     private double y;
+    private double fireRange;
 
     public GameObject(double x, double y) {
         this.x = x;
