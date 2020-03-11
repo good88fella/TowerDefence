@@ -49,6 +49,9 @@ public class Game {
         tower3.setCurrentHealth(350);
         tower3.setAngle(210);
         this.towers.add(tower3);
+
+        Enemy enemy = new Enemy(1, 1);
+        enemies.add(enemy);
     }
 
     public boolean isGameOver() {

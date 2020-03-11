@@ -38,22 +38,29 @@ public class MainApp extends Application implements ShowFire {
         this.scale = Math.min(1500.0 / width, 1500.0 / height);
 
         Canvas canvas = new Canvas(width * scale, height * scale);
-
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
             gc.clearRect(100, 80, 300, 50);
             gc.fillText(String.format("x: %f, y: %f", event.getX(), event.getY()), 100 ,100);
             Game.game.createTower((int)(event.getX() / scale), (int)(event.getY() / scale));
         });
-        gc.setFill(Color.BLACK);
-        gc.fillRect(10, 10, 100, 100);
         Group root = new Group();
         addLines(width, height, root);
         root.getChildren().add(canvas);
+
         DrawField();
 
+
+       // Image image = new Image("explosion.png");
+       // final ImageView imageView = new ImageView(image);
+
+
+
+
         Scene scene = new Scene(root);
+        primaryStage.setTitle("Tower Defence");
         primaryStage.setScene(scene);
+        primaryStage.setResizable(false);
         primaryStage.show();
         at.start();
     }
@@ -65,6 +72,15 @@ public class MainApp extends Application implements ShowFire {
                 (rect.getEnd().getX() - rect.getStart().getX()) * scale + scale,
                 (rect.getEnd().getY() - rect.getStart().getY()) * scale + scale
                 );
+    }
+
+    private void DrawHealth(double x, double y, double percentage) {
+        double width = scale * 0.85;
+        double startx = (scale - width) / 2 + x;
+        gc.setFill(Color.DARKGRAY);
+        gc.fillRoundRect(startx, y, width, 4, 2, 2);
+        gc.setFill(percentage > 0.35 ? Color.GREEN : Color.RED);
+        gc.fillRoundRect(startx, y, width * percentage, 4, 2, 2);
     }
 
     private void DrawTower(Tower tower) {
@@ -82,15 +98,14 @@ public class MainApp extends Application implements ShowFire {
         gc.fillRect(-2, 0, 3, scale * 0.8);
         gc.restore();
         double percentage = tower.getCurrentHealth() / tower.getMaxHealth();
-        gc.setFill(Color.DARKGRAY);
-        gc.fillRoundRect(startX, startY - 6, scale, 4, 2, 2);
-        gc.setFill(percentage > 0.35 ? Color.GREEN : Color.RED);
-        gc.fillRoundRect(startX, startY - 6, scale * percentage, 4, 2, 2);
+        DrawHealth(startX, startY - 6, percentage);
     }
 
     private void DrawEnemy(Enemy enemy) {
         gc.setFill(Color.CHOCOLATE);
         gc.fillOval(enemy.getX() * scale, enemy.getY() * scale, scale, scale);
+        DrawHealth(enemy.getX() * scale, enemy.getY() * scale - 6,
+                enemy.getCurrentHealth() / enemy.getMaxHealth());
     }
 
     private void DrawField() {
@@ -115,8 +130,6 @@ public class MainApp extends Application implements ShowFire {
                 at.stop();
                 return;
             }
-            gc.clearRect(100, 200, 300, 50);
-            gc.fillText(String.format("x: %d", now), 100 ,250);
             if (Game.game.isNeedRedraw()) {
                 DrawField();
                 Game.game.setNeedRedraw(false);
