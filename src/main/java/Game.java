@@ -35,25 +35,10 @@ public class Game {
 
     public static void main(String[] args) throws InterruptedException {
         Game game = new Game();
-        game.gameMap = new GameMap(50, 25);
-        game.gameMap.fillMap();
-        game.gameMap.setStart(new Rect.Point(0, 1));
-        game.gameMap.setFinish(new Rect.Point(49, 1));
-        game.createEnemy();
-        while (game.enemies.size() > 0) {
-            Iterator<Enemy> iter = game.enemies.iterator();
-            while (iter.hasNext()) {
-                Enemy enemy = iter.next();
-                if (enemy.isAlive())
-                    enemy.move(game.gameMap);
-                else
-                    iter.remove();
-                Thread.sleep(200);
-            }
-        }
-    public Game() {
-        this.gameMap = new GameMap(50, 25);
-        gameMap.fillMap();
+
+    }
+
+    public Game(){
 
         Tower tower1 = new Tower(0, 1);
         tower1.setCurrentHealth(100);
@@ -71,8 +56,26 @@ public class Game {
         tower3.setAngle(210);
         this.towers.add(tower3);
 
-        Enemy enemy = new Enemy(1, 1);
-        enemies.add(enemy);
+        this.gameMap = new GameMap(50, 25);
+        this.gameMap.fillMap();
+        this.gameMap.setStart(new Rect.Point(0, 1));
+        this.gameMap.setFinish(new Rect.Point(49, 1));
+        this.createEnemy();
+    }
+
+    public void runGame() throws InterruptedException {
+        while (this.enemies.size() > 0) {
+            Iterator<Enemy> iter = this.enemies.iterator();
+            while (iter.hasNext()) {
+                Enemy enemy = iter.next();
+                if (enemy.isAlive())
+                    enemy.move(this.gameMap);
+                else
+                    iter.remove();
+                needRedraw = true;
+                Thread.sleep(100);
+            }
+        }
     }
 
     public boolean isGameOver() {
@@ -82,8 +85,6 @@ public class Game {
     public GameMap getGameMap() {
         return gameMap;
     }
-
-    private boolean isGameOver = false;
 
     public void createTower(double x, double y) {
         towers.add(new Tower(x, y));

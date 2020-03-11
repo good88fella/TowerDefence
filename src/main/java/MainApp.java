@@ -40,8 +40,6 @@ public class MainApp extends Application implements ShowFire {
         Canvas canvas = new Canvas(width * scale, height * scale);
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
-            gc.clearRect(100, 80, 300, 50);
-            gc.fillText(String.format("x: %f, y: %f", event.getX(), event.getY()), 100 ,100);
             Game.game.createTower((int)(event.getX() / scale), (int)(event.getY() / scale));
         });
         Group root = new Group();
@@ -110,6 +108,7 @@ public class MainApp extends Application implements ShowFire {
 
     private void DrawField() {
        // DrawGrid();
+        gc.clearRect(0,0,gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
         for (Tower tower : Game.game.getTowers()) {
             DrawTower(tower);
         }
@@ -139,6 +138,14 @@ public class MainApp extends Application implements ShowFire {
 
     public static void main(String[] args) {
         Game.game = new Game();
+        Thread thread = new Thread(() -> {
+            try {
+                Game.game.runGame();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
         launch();
     }
 
