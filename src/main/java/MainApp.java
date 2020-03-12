@@ -6,24 +6,57 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 import utils.Rect;
-import view.ShowFire;
 
-public class MainApp extends Application implements ShowFire {
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+
+public class MainApp extends Application {
     private double scale;
     private GraphicsContext gc;
+    private Image explosion;
+    private Image road;
+    private Image field;
+    private Queue<ExplosionAnimation> explosionAnimations = new LinkedList<>();
+    private final static int MAX_FRAMES_EXPL = 48;
+    private final static int ANIM_SPRITE_ROWS = 6;
+    private final static int ANIM_SPRITE_COLS = 8;
+    private final static int ANIM_FRAME_WIDTH = 256;
+    private final static int ANIM_FRAME_HEIGHT = 256;
+    private final static int NANOSEC_PER_FRAME = 20_000;
+    private final static double HEADER_HEIGHT = 100;
+
+    private double getAbsY() {
+        return HEADER_HEIGHT + 0;
+    }
+
+    private static class ExplosionAnimation {
+        private double x;
+        private double y;
+        private int stage;
+        private long now;
+
+        public ExplosionAnimation(double x, double y, long now) {
+            this.x = x;
+            this.y = y;
+            this.now = now;
+            this.stage = 0;
+        }
+    }
 
     private void addLines(double width, double height, Group group) {
         for (int i = 0; i <= height; i++) {
-            Line line = new Line(0, i * scale, width * scale, i * scale);
+            Line line = new Line(0, getAbsY() + i * scale, width * scale, getAbsY() + i * scale);
             line.setStroke(Color.LIGHTGREY);
             group.getChildren().add(line);
         }
         for (int i = 0; i <= width; i++) {
-            Line line = new Line(i * scale, 0, i * scale, height * scale);
+            Line line = new Line(i * scale, getAbsY() + 0, i * scale, getAbsY() + height * scale);
             line.setStroke(Color.LIGHTGREY);
             group.getChildren().add(line);
         }
@@ -46,14 +79,9 @@ public class MainApp extends Application implements ShowFire {
         addLines(width, height, root);
         root.getChildren().add(canvas);
 
-        DrawField();
-
-
-       // Image image = new Image("explosion.png");
-       // final ImageView imageView = new ImageView(image);
-
-
-
+        explosion = new Image("explosion.png");
+        road = new Image("road.jpg");
+        field = new Image("field.jpg");
 
         Scene scene = new Scene(root);
         primaryStage.setTitle("Tower Defence");
@@ -81,7 +109,7 @@ public class MainApp extends Application implements ShowFire {
         gc.fillRoundRect(startx, y, width * percentage, 4, 2, 2);
     }
 
-    private void DrawTower(Tower tower) {
+    private void DrawTower(Tower tower, long now) {
         double startX = tower.getX() * scale;
         double startY = tower.getY() * scale;
         gc.setFill(Color.DARKKHAKI);
@@ -91,12 +119,19 @@ public class MainApp extends Application implements ShowFire {
         gc.fillOval(startX + (scale - r) / 2 , startY + (scale - r) / 2, r, r);
         gc.save();
         gc.setFill(Color.BLACK);
+        double barrelLength = scale * 0.8;
         gc.translate(startX + scale / 2, startY + scale / 2);
         gc.rotate(tower.getAngle() + 90);
-        gc.fillRect(-2, 0, 3, scale * 0.8);
+        gc.fillRect(-2, 0, 3, barrelLength);
         gc.restore();
         double percentage = tower.getCurrentHealth() / tower.getMaxHealth();
         DrawHealth(startX, startY - 6, percentage);
+        double angleRad = Math.toRadians(tower.getAngle() + 180);
+        if (tower.isShooting()) {
+            explosionAnimations.add(new ExplosionAnimation(startX + scale / 2 + barrelLength * Math.cos(angleRad),
+                    startY + scale / 2 + barrelLength * Math.sin(angleRad), now));
+            tower.setShooting(false);
+        }
     }
 
     private void DrawEnemy(Enemy enemy) {
@@ -106,11 +141,17 @@ public class MainApp extends Application implements ShowFire {
                 enemy.getCurrentHealth() / enemy.getMaxHealth());
     }
 
-    private void DrawField() {
+    private void DrawField(long now) {
        // DrawGrid();
-        gc.clearRect(0,0,gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+        gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+        char[][] matrix = Game.game.getGameMap().getMatrix();
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                gc.drawImage(matrix[i][j] == '#' ? road : field, 0, 0, 200, 200, j * scale, i * scale, scale, scale);
+            }
+        }
         for (Tower tower : Game.game.getTowers()) {
-            DrawTower(tower);
+            DrawTower(tower, now);
         }
         for (Rect rect : Game.game.getGameMap().getFieldsCoordinates()) {
             DrawFence(rect);
@@ -120,8 +161,6 @@ public class MainApp extends Application implements ShowFire {
         }
     }
 
-
-
     protected AnimationTimer at = new AnimationTimer(){
         @Override
         public void handle(long now) {
@@ -130,8 +169,27 @@ public class MainApp extends Application implements ShowFire {
                 return;
             }
             if (Game.game.isNeedRedraw()) {
-                DrawField();
+                DrawField(now);
                 Game.game.setNeedRedraw(false);
+                Iterator<ExplosionAnimation> iterExplAnim = explosionAnimations.iterator();
+                while (iterExplAnim.hasNext()) {
+                    ExplosionAnimation explAnim = iterExplAnim.next();
+                    if (explAnim.stage >= MAX_FRAMES_EXPL) {
+                        iterExplAnim.remove();
+                        Game.game.setNeedRedraw(true);
+                    }
+                    else {
+                        if (now - explAnim.now >= NANOSEC_PER_FRAME) {
+                            int startX = explAnim.stage % ANIM_SPRITE_COLS;
+                            int startY = explAnim.stage / ANIM_SPRITE_COLS;
+                            gc.drawImage(explosion, startX, startY, ANIM_FRAME_WIDTH, ANIM_FRAME_HEIGHT,
+                                    explAnim.x - scale , explAnim.y - scale , scale *2 , scale *2 );
+                            explAnim.now = now;
+                            explAnim.stage++;
+                            Game.game.setNeedRedraw(true);
+                        }
+                    }
+                }
             }
         }
     };
@@ -147,10 +205,5 @@ public class MainApp extends Application implements ShowFire {
         });
         thread.start();
         launch();
-    }
-
-    @Override
-    public void showFire(double x, double y, double targetX, double targetY) {
-
     }
 }
