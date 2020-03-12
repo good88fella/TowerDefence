@@ -18,9 +18,9 @@ public class Game {
     private int waveCounter;
     private int lives;
     private int killed;
-    private int armyRange;
-    private int armyPower;
-    private int armyHealth;
+    private int armyRange = 3;
+    private int armyPower = 1;
+    private int armyHealth = 10;
 
 
     public Game() {
@@ -38,9 +38,9 @@ public class Game {
         int currentCount = 0;
         while (!isGameOver && !Thread.interrupted()) {
             if (enemies.size() == 0) {
-                Thread.sleep(2000);
+                Thread.sleep(5000);
                 waveCounter++;
-                upgradeEnemy(enemies, waveCounter);
+                upgradeArmy(waveCounter);
                 currentCount = waveCounter;
                 headerRedraw = true;
             }
@@ -174,22 +174,15 @@ public class Game {
     }
 
     public void createEnemy() {
-        enemies.add(new Enemy(gameMap.getStart().getX(), gameMap.getStart().getY()));
+        enemies.add(new Enemy(gameMap.getStart().getX(), gameMap.getStart().getY(), armyRange, armyPower, armyHealth));
     }
 
-    public void upgradeEnemy(List<Enemy> enemyList, int waveCounter) {
-        for (Enemy enemy : enemyList) {
-            if (waveCounter % 10 == 0) {
-                enemy.upgrade(Upgrade.RANGE);
-                armyRange = enemy.getFireRange();
-            } else if (waveCounter % 2 == 0) {
-                enemy.upgrade(Upgrade.POWER);
-                enemy.upgrade(Upgrade.ARMOR);
-                armyPower = enemy.getPower();
-                armyHealth = enemy.getMaxHealth();
-            } else {
-                break;
-            }
+    public void upgradeArmy(int waveCounter) {
+        if (waveCounter % 15 == 0) {
+            armyRange += 1;
+        } else if (waveCounter % 4 == 0) {
+            armyPower += 1;
+            armyHealth += 10;
         }
     }
 

@@ -389,9 +389,9 @@ public class MainApp extends Application {
                 gcArmyInfo.setStroke(Color.BLACK);
                 gcArmyInfo.strokeRoundRect(2, 2, gcArmyInfo.getCanvas().getWidth() - 4, gcArmyInfo.getCanvas().getHeight() - 4, 5, 5);
                 gcArmyInfo.setFill(Color.WHITE);
-                gcArmyInfo.fillText(String.format("Range: %d", 0), 5, 16);
-                gcArmyInfo.fillText(String.format("Power: %d", 0), 5, 36);
-                gcArmyInfo.fillText(String.format("Max armory: %d", 0), 5, 55);
+                gcArmyInfo.fillText(String.format("Range: %d", game.getArmyRange()), 5, 16);
+                gcArmyInfo.fillText(String.format("Power: %d", game.getArmyPower()), 5, 36);
+                gcArmyInfo.fillText(String.format("Max armory: %d", game.getArmyHealth()), 5, 55);
                 game.setHeaderRedraw(false);
             }
             if (redrawTowerInfo) {

@@ -10,11 +10,11 @@ public class Enemy extends GameObject {
     private Rect.Point prevPoint;
     private double speed;
 
-    public Enemy(double x, double y) {
+    public Enemy(double x, double y, int fireRange, int power, int maxHealth) {
         super(x, y, 1);
-        fireRange = 3;
-        power = 1;
-        maxHealth = 10;
+        this.fireRange = fireRange;
+        this.power = power;
+        this.maxHealth = maxHealth;
         currentHealth = maxHealth;
         speed = 1;
     }
