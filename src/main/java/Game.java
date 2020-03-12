@@ -8,7 +8,6 @@ import java.util.*;
 
 public class Game {
 
-    public static Game game;
     private GameMap gameMap;
     private boolean needRedraw;
     private boolean headerRedraw;
@@ -135,24 +134,26 @@ public class Game {
     }
 
     public boolean upgradeTower(Tower tower, Upgrade up) {
+        if (!towers.contains(tower) || tower == null)
+            return false;
         switch (up) {
             case RANGE:
-                if (balance >= 100) {
-                    balance -= 100;
+                if (balance >= tower.getFireRangeUpgradeCost() + 10 * tower.getFireRangeUpgradeLvl()) {
+                    balance -= (tower.getFireRangeUpgradeCost() + 10 * tower.getFireRangeUpgradeLvl());
                     tower.upgrade(Upgrade.RANGE);
                     return true;
                 }
                 break;
             case POWER:
-                if (balance >= 30) {
-                    balance -= 30;
+                if (balance >= tower.getPowerUpgradeCost() + 3 * tower.getPowerUpgradeLvl()) {
+                    balance -= (tower.getPowerUpgradeCost() + 3 * tower.getPowerUpgradeLvl());
                     tower.upgrade(Upgrade.POWER);
                     return true;
                 }
                 break;
             case ARMOR:
-                if (balance >= 10) {
-                    balance -= 10;
+                if (balance >= tower.getHealthUpgradeCost() + 2 * tower.getHealthUpgradeLvl()) {
+                    balance -= (tower.getHealthUpgradeCost() + 2 * tower.getHealthUpgradeLvl());
                     tower.upgrade(Upgrade.ARMOR);
                     return true;
                 }
@@ -200,10 +201,6 @@ public class Game {
 
     public List<Enemy> getEnemies() {
         return enemies;
-    }
-
-    public static Game getGame() {
-        return game;
     }
 
     public int getBalance() {

@@ -3,7 +3,6 @@ package entities;
 import utils.GameObject;
 import utils.Rect;
 
-import java.util.List;
 import java.util.Set;
 
 public class Enemy extends GameObject {
