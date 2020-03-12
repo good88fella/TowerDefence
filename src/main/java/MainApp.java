@@ -2,13 +2,16 @@ import entities.Enemy;
 import entities.Tower;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.image.Image;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
@@ -24,6 +27,7 @@ public class MainApp extends Application {
     private double scale;
     private GraphicsContext gc;
     private GraphicsContext header;
+    private GraphicsContext gcTowerInfo;
     private Image explosion;
     private Image road;
     private Image field;
@@ -35,8 +39,10 @@ public class MainApp extends Application {
     private final static int ANIM_FRAME_WIDTH = 256;
     private final static int ANIM_FRAME_HEIGHT = 256;
     private final static int NANOSEC_PER_FRAME = 20_000;
-    private final static double HEADER_HEIGHT = 50;
+    private final static double HEADER_HEIGHT = 60;
     private static Thread thread;
+    private Tower selected;
+    private boolean redrawTowerInfo;
 
     private static class HealthData {
         private double x;
@@ -82,6 +88,83 @@ public class MainApp extends Application {
         thread.interrupt();
     }
 
+    HBox createHeader(double width) {
+        HBox hBox = new HBox();
+        Canvas info = new Canvas(width * 0.4, HEADER_HEIGHT);
+        header = info.getGraphicsContext2D();
+
+        GridPane buttonBox = new GridPane();
+        ColumnConstraints column1 = new ColumnConstraints();
+        column1.setPercentWidth(HEADER_HEIGHT);
+        column1.setPrefWidth(width * 0.1);
+        buttonBox.getColumnConstraints().add(column1);
+        ColumnConstraints column2 = new ColumnConstraints();
+        column2.setPercentWidth(HEADER_HEIGHT);
+        column2.setPrefWidth(width * 0.1);
+        buttonBox.getColumnConstraints().add(column2);
+        RowConstraints row1 = new RowConstraints();
+        row1.setPercentHeight(100);
+        buttonBox.getRowConstraints().add(row1);
+
+        Button startFinish = new Button("Start/Stop");
+        startFinish.setMaxWidth(Double.MAX_VALUE);
+        startFinish.setMaxHeight(Double.MAX_VALUE);
+        GridPane.setMargin(startFinish, new Insets(10));
+
+        Button exit = new Button("Exit");
+        exit.setMaxWidth(Double.MAX_VALUE);
+        exit.setMaxHeight(Double.MAX_VALUE);
+        GridPane.setMargin(exit, new Insets(10));
+
+        buttonBox.setStyle("-fx-background-color: #006400");
+
+        buttonBox.add(startFinish, 0, 0);
+        buttonBox.add(exit, 1, 0);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        Canvas canvasTowerInfo = new Canvas(width * 0.2, HEADER_HEIGHT);
+        AnchorPane anchorPane = new AnchorPane();
+        gcTowerInfo = canvasTowerInfo.getGraphicsContext2D();
+        gcTowerInfo.setFill(Color.BLUE);
+        gcTowerInfo.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+        VBox vButtons = new VBox(2);
+        Button button1 = new Button("\u2191 something");
+        button1.setPrefWidth(width * 0.05);
+        button1.setFont(Font.font(9));
+        button1.setMaxHeight(13);
+        vButtons.getChildren().add(button1);
+        Button button2 = new Button("\u2191 something");
+        button2.setPrefWidth(width * 0.05);
+        button2.setFont(Font.font(9));
+        button2.setMaxHeight(13);
+        vButtons.getChildren().add(button2);
+        Button button3 = new Button("\u2191 something");
+        button3.setPrefWidth(width * 0.05);
+        button3.setFont(Font.font(9));
+        button3.setMaxHeight(13);
+        vButtons.getChildren().add(button3);
+        AnchorPane.setRightAnchor(vButtons, 2.0);
+        AnchorPane.setTopAnchor(vButtons, 2.0);
+        AnchorPane.setBottomAnchor(vButtons, 2.0);
+
+
+        anchorPane.getChildren().add(canvasTowerInfo);
+        anchorPane.getChildren().add(vButtons);
+
+        Canvas canvasArmyInfo = new Canvas(width * 0.2, HEADER_HEIGHT);
+        AnchorPane anchorPane1 = new AnchorPane();
+        GraphicsContext gcArmyInfo = canvasArmyInfo.getGraphicsContext2D();
+        gcArmyInfo.setFill(Color.ANTIQUEWHITE);
+        gcArmyInfo.fillRect(0, 0, gcArmyInfo.getCanvas().getWidth(), gcArmyInfo.getCanvas().getHeight());
+        anchorPane1.getChildren().add(canvasArmyInfo);
+
+        hBox.getChildren().add(info);
+        hBox.getChildren().add(anchorPane);
+        hBox.getChildren().add(anchorPane1);
+        hBox.getChildren().add(buttonBox);
+        return hBox;
+    }
+
     @Override
     public void start(Stage primaryStage) {
         Game game = Game.game;
@@ -93,13 +176,13 @@ public class MainApp extends Application {
         Canvas canvas = new Canvas(width * scale, height * scale);
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
-            Game.game.createTower((int)(event.getX() / scale), (int)(event.getY() / scale));
+            selected = Game.game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
+
         });
         VBox vBox = new VBox();
-        Canvas canvas1 = new Canvas(width * scale, 50);
-        header = canvas1.getGraphicsContext2D();
+        HBox hBox = createHeader(width * scale);
         
-        vBox.getChildren().add(canvas1);
+        vBox.getChildren().add(hBox);
         vBox.getChildren().add(canvas);
 
         explosion = new Image("images/explosion.png");
@@ -280,6 +363,18 @@ public class MainApp extends Application {
                 header.fillText(String.format("Gold: %d", Game.game.getBalance()), 150, 20);
                 header.fillText(String.format("Killed: %d", Game.game.getKilled()), 150, 45);
                 Game.game.setHeaderRedraw(false);
+            }
+            if (redrawTowerInfo) {
+                if (selected != null) {
+                    gcTowerInfo.setFont(Font.font("Herculanum", 15));
+                    gcTowerInfo.setFill(Color.DARKGREEN);
+                    gcTowerInfo.fillRect(0, 0, gcTowerInfo.getCanvas().getWidth(), gcTowerInfo.getCanvas().getHeight());
+                    gcTowerInfo.setFill(Color.WHITE);
+                    header.fillText(String.format("Range: %f", selected.getFireRange()), 5, 5);
+                    header.fillText(String.format("Power: %f", selected.getPower()), 5, 20);
+                    header.fillText(String.format("Armory: %f/%f", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 40);
+                }
+                redrawTowerInfo = false;
             }
         }
     };
