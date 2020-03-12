@@ -154,7 +154,7 @@ public class Game {
             return false;
         switch (up) {
             case RANGE:
-                int upRangeCost = tower.getFireRangeUpgradeCost() + 40 * tower.getFireRangeUpgradeLvl();
+                int upRangeCost = tower.getFireRangeUpgradeCost() + 40 * (tower.getFireRangeUpgradeLvl() + 1);
                 if (balance >= upRangeCost) {
                     balance -= upRangeCost;
                     tower.upgrade(Upgrade.RANGE);
@@ -163,7 +163,7 @@ public class Game {
                 }
                 break;
             case POWER:
-                int upPowerCost = tower.getPowerUpgradeCost() + 10 * tower.getPowerUpgradeLvl();
+                int upPowerCost = tower.getPowerUpgradeCost() + 10 * (tower.getPowerUpgradeLvl() + 1);
                 if (balance >= upPowerCost) {
                     balance -= upPowerCost;
                     tower.upgrade(Upgrade.POWER);
@@ -172,7 +172,7 @@ public class Game {
                 }
                 break;
             case ARMOR:
-                int upArmorCost = tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl();
+                int upArmorCost = tower.getHealthUpgradeCost() + 5 * (tower.getHealthUpgradeLvl() + 1);
                 if (balance >= upArmorCost) {
                     balance -= upArmorCost;
                     tower.upgrade(Upgrade.ARMOR);
