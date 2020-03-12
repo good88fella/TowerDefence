@@ -4,6 +4,7 @@ import entities.Tower;
 import utils.Rect;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -13,8 +14,8 @@ public class Game {
     private GameMap gameMap;
     private boolean needRedraw;
     private boolean headerRedraw;
-    private List<Enemy> enemies = new ArrayList<>();
-    private List<Tower> towers = new ArrayList<>();
+    private List<Enemy> enemies = Collections.synchronizedList(new ArrayList<>());
+    private List<Tower> towers = Collections.synchronizedList(new ArrayList<>());
     private boolean isGameOver = false;
     private int balance;
     private int waveCounter;
@@ -46,37 +47,41 @@ public class Game {
                 createEnemy();
                 currentCount--;
             }
-            Iterator<Tower> iterTowers = this.towers.iterator();
-            while (iterTowers.hasNext() && !isGameOver) {
-                Tower tower = iterTowers.next();
-                if (tower.isAlive()) {
-                    if (tower.fire(enemies)) {
-                        balance += 10;
-                        killed++;
-                        headerRedraw = true;
+            synchronized (towers) {
+                Iterator<Tower> iterTowers = this.towers.iterator();
+                while (iterTowers.hasNext() && !isGameOver) {
+                    Tower tower = iterTowers.next();
+                    if (tower.isAlive()) {
+                        if (tower.fire(enemies)) {
+                            balance += 10;
+                            killed++;
+                            headerRedraw = true;
+                        }
+                    } else {
+                        iterTowers.remove();
                     }
-                } else {
-                    iterTowers.remove();
+                    needRedraw = true;
                 }
-                needRedraw = true;
             }
 
-            Iterator<Enemy> iterEnemies = this.enemies.iterator();
-            while (iterEnemies.hasNext() && !isGameOver) {
-                Enemy enemy = iterEnemies.next();
-                if (enemy.isAlive()) {
-                    enemy.fire(towers);
-                    boolean ifFinished = enemy.move(this.gameMap);
-                    if (ifFinished) {
-                        lives--;
-                        headerRedraw = true;
+            synchronized (enemies) {
+                Iterator<Enemy> iterEnemies = this.enemies.iterator();
+                while (iterEnemies.hasNext() && !isGameOver) {
+                    Enemy enemy = iterEnemies.next();
+                    if (enemy.isAlive()) {
+                        enemy.fire(towers);
+                        boolean ifFinished = enemy.move(this.gameMap);
+                        if (ifFinished) {
+                            lives--;
+                            headerRedraw = true;
+                        }
+                    } else {
+                        iterEnemies.remove();
                     }
-                } else {
-                    iterEnemies.remove();
+                    if (lives <= 0)
+                        isGameOver = true;
+                    needRedraw = true;
                 }
-                if (lives <= 0)
-                    isGameOver = true;
-                needRedraw = true;
             }
             Thread.sleep(200);
         }
