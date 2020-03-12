@@ -7,10 +7,10 @@ public abstract class GameObject {
     protected double x;
     protected double y;
     protected double radius;
-    protected double fireRange;
-    protected double power;
-    protected double maxHealth;
-    protected double currentHealth;
+    protected int fireRange;
+    protected int power;
+    protected int maxHealth;
+    protected int currentHealth;
     protected double angle;
     protected boolean isAlive;
     protected GameObject target;
@@ -111,35 +111,35 @@ public abstract class GameObject {
         this.radius = radius;
     }
 
-    public double getFireRange() {
+    public int getFireRange() {
         return fireRange;
     }
 
-    public void setFireRange(double fireRange) {
+    public void setFireRange(int fireRange) {
         this.fireRange = fireRange;
     }
 
-    public double getPower() {
+    public int getPower() {
         return power;
     }
 
-    public void setPower(double power) {
+    public void setPower(int power) {
         this.power = power;
     }
 
-    public double getMaxHealth() {
+    public int getMaxHealth() {
         return maxHealth;
     }
 
-    public void setMaxHealth(double maxHealth) {
+    public void setMaxHealth(int maxHealth) {
         this.maxHealth = maxHealth;
     }
 
-    public double getCurrentHealth() {
+    public int getCurrentHealth() {
         return currentHealth;
     }
 
-    public void setCurrentHealth(double currentHealth) {
+    public void setCurrentHealth(int currentHealth) {
         this.currentHealth = currentHealth;
     }
 
@@ -173,5 +173,17 @@ public abstract class GameObject {
 
     public void setShooting(boolean shooting) {
         isShooting = shooting;
+    }
+
+    public int getFireRangeUpgradeLvl() {
+        return fireRangeUpgradeLvl;
+    }
+
+    public int getPowerUpgradeLvl() {
+        return powerUpgradeLvl;
+    }
+
+    public int getHealthUpgradeLvl() {
+        return healthUpgradeLvl;
     }
 }
