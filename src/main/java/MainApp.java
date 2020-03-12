@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 import utils.GameObject;
 import utils.Orientation;
 import utils.Rect;
+import utils.Upgrade;
 
 import java.util.*;
 
@@ -132,16 +133,28 @@ public class MainApp extends Application {
         button1.setPrefWidth(width * 0.05);
         button1.setFont(Font.font(9));
         button1.setMaxHeight(13);
+        button1.setOnAction(event -> {
+            if (Game.game.upgradeTower(selected, Upgrade.RANGE))
+                redrawTowerInfo = true;
+        });
         vButtons.getChildren().add(button1);
         Button button2 = new Button("\u2191 something");
         button2.setPrefWidth(width * 0.05);
         button2.setFont(Font.font(9));
         button2.setMaxHeight(13);
+        button2.setOnAction(event -> {
+            if (Game.game.upgradeTower(selected, Upgrade.POWER))
+                redrawTowerInfo = true;
+        });
         vButtons.getChildren().add(button2);
         Button button3 = new Button("\u2191 something");
         button3.setPrefWidth(width * 0.05);
         button3.setFont(Font.font(9));
         button3.setMaxHeight(13);
+        button3.setOnAction(event -> {
+            if (Game.game.upgradeTower(selected, Upgrade.ARMOR))
+                redrawTowerInfo = true;
+        });
         vButtons.getChildren().add(button3);
         AnchorPane.setRightAnchor(vButtons, 2.0);
         AnchorPane.setTopAnchor(vButtons, 2.0);
@@ -177,7 +190,7 @@ public class MainApp extends Application {
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
             selected = Game.game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
-
+            redrawTowerInfo = true;
         });
         VBox vBox = new VBox();
         HBox hBox = createHeader(width * scale);
@@ -370,9 +383,9 @@ public class MainApp extends Application {
                     gcTowerInfo.setFill(Color.DARKGREEN);
                     gcTowerInfo.fillRect(0, 0, gcTowerInfo.getCanvas().getWidth(), gcTowerInfo.getCanvas().getHeight());
                     gcTowerInfo.setFill(Color.WHITE);
-                    header.fillText(String.format("Range: %f", selected.getFireRange()), 5, 5);
-                    header.fillText(String.format("Power: %f", selected.getPower()), 5, 20);
-                    header.fillText(String.format("Armory: %f/%f", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 40);
+                    gcTowerInfo.fillText(String.format("Range: %.1f", selected.getFireRange()), 5, 16);
+                    gcTowerInfo.fillText(String.format("Power: %.1f", selected.getPower()), 5, 36);
+                    gcTowerInfo.fillText(String.format("Armory: %.1f/%.1f", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
                 }
                 redrawTowerInfo = false;
             }
