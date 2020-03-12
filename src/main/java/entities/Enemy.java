@@ -23,8 +23,7 @@ public class Enemy extends GameObject {
 
     @Override
     public void upgrade() {
-        power++;
-        maxHealth += 10;
+
     }
 
     public boolean move(GameMap gameMap) {

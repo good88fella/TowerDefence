@@ -21,17 +21,6 @@ public class GameMap {
         fieldsCoordinates = new ArrayList<>();
     }
 
-    public void draw() {
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                System.out.print(matrix[i][j]);
-            }
-            System.out.println();
-        }
-        System.out.println();
-        System.out.println();
-    }
-
     public void fillMap() {
         fieldsCoordinates.add(new Rect(new Rect.Point(0, 0), new Rect.Point(49, 0)));
         fieldsCoordinates.add(new Rect(new Rect.Point(0, 24), new Rect.Point(49, 24)));
