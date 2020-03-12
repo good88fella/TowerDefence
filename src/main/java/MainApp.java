@@ -81,6 +81,12 @@ public class MainApp extends Application {
         thread.interrupt();
     }
 
+    private void redrawAll() {
+        redrawTowerInfo = true;
+        game.setNeedRedraw(true);
+        game.setHeaderRedraw(true);
+    }
+
     Button createUpgradeButton(double width, EventHandler<ActionEvent> value) {
         Button button = new Button();
         button.setPrefWidth(width * 0.05);
@@ -90,19 +96,22 @@ public class MainApp extends Application {
         return button;
     }
 
-    private void launchNewGame() {
-
-    }
-
     private void startStopHandle() {
-        if (game == null) {
-            launchNewGame();
-        }
-        else {
-            if (game.getLives() == 0) {
-                launchNewGame();
+        if (!game.isStarted()) {
+            game.setStarted(true);
+            game.setGameOver(false);
+            startPause.setText("Pause");
+            redrawAll();
+        } else {
+            if (game.isGameOver()) {
+                game.gameInit();
+                game.setGameOver(false);
+                redrawAll();
+                startPause.setText("Pause");
             } else {
-                game.setLives(0);
+                game.setStarted(false);
+                redrawAll();
+                startPause.setText("Start");
             }
         }
     }
@@ -154,18 +163,24 @@ public class MainApp extends Application {
         gcTowerInfo.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
         buttonsTower = new VBox(2);
         Button button1 = createUpgradeButton(width, event -> {
-            if (game.upgradeTower(selected, Upgrade.RANGE))
+            if (game.upgradeTower(selected, Upgrade.RANGE)) {
                 redrawTowerInfo = true;
+                game.setHeaderRedraw(true);
+            }
         });
         buttonsTower.getChildren().add(button1);
         Button button2 = createUpgradeButton(width, event -> {
-            if (game.upgradeTower(selected, Upgrade.POWER))
+            if (game.upgradeTower(selected, Upgrade.POWER)) {
                 redrawTowerInfo = true;
+                game.setHeaderRedraw(true);
+            }
         });
         buttonsTower.getChildren().add(button2);
         Button button3 = createUpgradeButton(width, event -> {
-            if (game.upgradeTower(selected, Upgrade.ARMOR))
+            if (game.upgradeTower(selected, Upgrade.ARMOR)) {
                 redrawTowerInfo = true;
+                game.setHeaderRedraw(true);
+            }
         });
         buttonsTower.getChildren().add(button3);
         AnchorPane.setRightAnchor(buttonsTower, 5.0);
@@ -220,6 +235,7 @@ public class MainApp extends Application {
         primaryStage.setResizable(false);
         primaryStage.show();
         at.start();
+        redrawAll();
     }
 
     private void drawHealth(double x, double y, double percentage) {
@@ -373,7 +389,7 @@ public class MainApp extends Application {
                         }
                     }
                 }
-                if (game.getLives() == 0) {
+                if (game.isGameOver()) {
                     drawGameOver();
                     startPause.setText("Start");
                 }

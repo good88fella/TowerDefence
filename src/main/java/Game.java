@@ -21,13 +21,17 @@ public class Game {
     private int armyRange;
     private int armyPower;
     private int armyHealth;
+    private boolean isStarted;
+    private int currentCount;
 
 
-    public Game() {
+    public void gameInit() {
         this.gameMap = new GameMap(50, 25);
         this.gameMap.fillMap();
         this.gameMap.setStart(new Rect.Point(0, 1));
         this.gameMap.setFinish(new Rect.Point(49, 1));
+        enemies.clear();
+        towers.clear();
         balance = 30;
         waveCounter = 0;
         lives = 1;
@@ -35,61 +39,67 @@ public class Game {
         armyRange = 3;
         armyPower = 1;
         armyHealth = 10;
+        currentCount = 0;
+    }
+
+    public Game() {
+        gameInit();
     }
 
     public void runGame() throws InterruptedException {
-        int currentCount = 0;
-        while (!isGameOver && !Thread.interrupted()) {
-            if (enemies.size() == 0) {
-                Thread.sleep(5000);
-                waveCounter++;
-                upgradeArmy(waveCounter);
-                currentCount = waveCounter;
-                headerRedraw = true;
-            }
-            if (currentCount > 0) {
-                createEnemy();
-                currentCount--;
-            }
-            synchronized (towers) {
-                Iterator<Tower> iterTowers = towers.iterator();
-                while (iterTowers.hasNext() && !isGameOver) {
-                    Tower tower = iterTowers.next();
-                    if (tower.isAlive()) {
-                        if (tower.fire(enemies)) {
-                            balance += (10 + 2 * waveCounter);
-                            killed++;
-                            headerRedraw = true;
-                        }
-                    } else {
-                        iterTowers.remove();
-                    }
-                    needRedraw = true;
+        while (!Thread.interrupted()) {
+            if (isStarted && !isGameOver) {
+                if (enemies.size() == 0) {
+                    Thread.sleep(5000);
+                    waveCounter++;
+                    upgradeArmy(waveCounter);
+                    currentCount = waveCounter;
+                    headerRedraw = true;
                 }
-            }
+                if (currentCount > 0) {
+                    createEnemy();
+                    currentCount--;
+                }
+                synchronized (towers) {
+                    Iterator<Tower> iterTowers = towers.iterator();
+                    while (iterTowers.hasNext() && !isGameOver) {
+                        Tower tower = iterTowers.next();
+                        if (tower.isAlive()) {
+                            if (tower.fire(enemies)) {
+                                balance += (10 + 2 * waveCounter);
+                                killed++;
+                                headerRedraw = true;
+                            }
+                        } else {
+                            iterTowers.remove();
+                        }
+                        needRedraw = true;
+                    }
+                }
 
-            synchronized (enemies) {
-                Iterator<Enemy> iterEnemies = enemies.iterator();
-                while (iterEnemies.hasNext() && !isGameOver) {
-                    Enemy enemy = iterEnemies.next();
-                    if (enemy.isAlive()) {
-                        enemy.fire(towers);
-                        boolean ifFinished = enemy.move(gameMap);
-                        if (ifFinished) {
-                            lives--;
+                synchronized (enemies) {
+                    Iterator<Enemy> iterEnemies = enemies.iterator();
+                    while (iterEnemies.hasNext() && !isGameOver) {
+                        Enemy enemy = iterEnemies.next();
+                        if (enemy.isAlive()) {
+                            enemy.fire(towers);
+                            boolean ifFinished = enemy.move(gameMap);
+                            if (ifFinished) {
+                                lives--;
+                                headerRedraw = true;
+                            }
+                        } else {
+                            iterEnemies.remove();
+                        }
+                        if (lives <= 0) {
+                            isGameOver = true;
                             headerRedraw = true;
                         }
-                    } else {
-                        iterEnemies.remove();
+                        needRedraw = true;
                     }
-                    if (lives <= 0) {
-                        isGameOver = true;
-                        headerRedraw = true;
-                    }
-                    needRedraw = true;
                 }
+                Thread.sleep(200);
             }
-            Thread.sleep(200);
         }
     }
 
@@ -195,6 +205,10 @@ public class Game {
         }
     }
 
+    public void restore() {
+
+    }
+
     public boolean isNeedRedraw() {
         return needRedraw;
     }
@@ -265,5 +279,13 @@ public class Game {
 
     public int getArmyHealth() {
         return armyHealth;
+    }
+
+    public boolean isStarted() {
+        return isStarted;
+    }
+
+    public void setStarted(boolean started) {
+        isStarted = started;
     }
 }
