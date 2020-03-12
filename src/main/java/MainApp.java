@@ -40,10 +40,11 @@ public class MainApp extends Application {
     private final static int ANIM_FRAME_WIDTH = 256;
     private final static int ANIM_FRAME_HEIGHT = 256;
     private final static int NANOSEC_PER_FRAME = 20_000;
-    private final static double HEADER_HEIGHT = 60;
+    private final static double HEADER_HEIGHT = 68;
     private static Thread thread;
     private Tower selected;
     private boolean redrawTowerInfo;
+    private static Game game;
 
     private static class HealthData {
         private double x;
@@ -126,7 +127,7 @@ public class MainApp extends Application {
         Canvas canvasTowerInfo = new Canvas(width * 0.2, HEADER_HEIGHT);
         AnchorPane anchorPane = new AnchorPane();
         gcTowerInfo = canvasTowerInfo.getGraphicsContext2D();
-        gcTowerInfo.setFill(Color.BLUE);
+        gcTowerInfo.setFill(Color.DARKGREEN);
         gcTowerInfo.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
         VBox vButtons = new VBox(2);
         Button button1 = new Button("\u2191 something");
@@ -134,7 +135,7 @@ public class MainApp extends Application {
         button1.setFont(Font.font(9));
         button1.setMaxHeight(13);
         button1.setOnAction(event -> {
-            if (Game.game.upgradeTower(selected, Upgrade.RANGE))
+            if (game.upgradeTower(selected, Upgrade.RANGE))
                 redrawTowerInfo = true;
         });
         vButtons.getChildren().add(button1);
@@ -143,7 +144,7 @@ public class MainApp extends Application {
         button2.setFont(Font.font(9));
         button2.setMaxHeight(13);
         button2.setOnAction(event -> {
-            if (Game.game.upgradeTower(selected, Upgrade.POWER))
+            if (game.upgradeTower(selected, Upgrade.POWER))
                 redrawTowerInfo = true;
         });
         vButtons.getChildren().add(button2);
@@ -152,13 +153,13 @@ public class MainApp extends Application {
         button3.setFont(Font.font(9));
         button3.setMaxHeight(13);
         button3.setOnAction(event -> {
-            if (Game.game.upgradeTower(selected, Upgrade.ARMOR))
+            if (game.upgradeTower(selected, Upgrade.ARMOR))
                 redrawTowerInfo = true;
         });
         vButtons.getChildren().add(button3);
-        AnchorPane.setRightAnchor(vButtons, 2.0);
-        AnchorPane.setTopAnchor(vButtons, 2.0);
-        AnchorPane.setBottomAnchor(vButtons, 2.0);
+        AnchorPane.setRightAnchor(vButtons, 5.0);
+        AnchorPane.setTopAnchor(vButtons, 5.0);
+        AnchorPane.setBottomAnchor(vButtons, 5.0);
 
 
         anchorPane.getChildren().add(canvasTowerInfo);
@@ -180,16 +181,14 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        Game game = Game.game;
-
         double width = game.getGameMap().getWidth();
         double height = game.getGameMap().getHeight();
         this.scale = Math.min(1500.0 / width, 1500.0 / height);
-
+        redrawTowerInfo = true;
         Canvas canvas = new Canvas(width * scale, height * scale);
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
-            selected = Game.game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
+            selected = game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
             redrawTowerInfo = true;
         });
         VBox vBox = new VBox();
@@ -299,17 +298,16 @@ public class MainApp extends Application {
 
     private void drawField(long now) {
         gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
-        char[][] matrix = Game.game.getGameMap().getMatrix();
+        char[][] matrix = game.getGameMap().getMatrix();
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++) {
                 gc.drawImage(matrix[i][j] == '#' ? road : field, 0, 0, 200, 200, j * scale, i * scale, scale, scale);
             }
         }
-
-        for (Tower tower : Game.game.getTowers()) {
+        for (Tower tower : game.getTowers()) {
             drawTower(tower, now);
         }
-        for (Enemy enemy : Game.game.getEnemies()) {
+        for (Enemy enemy : game.getEnemies()) {
             drawEnemy(enemy, now);
         }
         for (HealthData healthData : healthDataList) {
@@ -339,15 +337,15 @@ public class MainApp extends Application {
     protected AnimationTimer at = new AnimationTimer(){
         @Override
         public void handle(long now) {
-            if (Game.game.isNeedRedraw()) {
+            if (game.isNeedRedraw()) {
                 drawField(now);
-                Game.game.setNeedRedraw(false);
+                game.setNeedRedraw(false);
                 Iterator<ExplosionAnimation> iterExplAnim = explosionAnimations.iterator();
                 while (iterExplAnim.hasNext()) {
                     ExplosionAnimation explAnim = iterExplAnim.next();
                     if (explAnim.stage >= MAX_FRAMES_EXPL) {
                         iterExplAnim.remove();
-                        Game.game.setNeedRedraw(true);
+                        game.setNeedRedraw(true);
                     }
                     else {
                         if (now - explAnim.now >= NANOSEC_PER_FRAME) {
@@ -358,31 +356,35 @@ public class MainApp extends Application {
                                     explAnim.x - scale /2 , explAnim.y - scale /2 , scale, scale);
                             explAnim.now = now;
                             explAnim.stage++;
-                            Game.game.setNeedRedraw(true);
+                            game.setNeedRedraw(true);
                         }
                     }
                 }
-                if (Game.game.getLives() == 0) {
+                if (game.getLives() == 0) {
                     drawGameOver();
                 }
             }
-            if (Game.game.isHeaderRedraw()) {
+            if (game.isHeaderRedraw()) {
                 header.setFont(Font.font("Herculanum", 20));
                 header.setFill(Color.DARKGREEN);
                 header.fillRect(0, 0, header.getCanvas().getWidth(), header.getCanvas().getHeight());
+                header.setStroke(Color.BLACK);
+                header.strokeRoundRect(2, 2, header.getCanvas().getWidth() - 4, header.getCanvas().getHeight() - 4, 5, 5);
                 header.setFill(Color.WHITE);
-                header.fillText(String.format("Level: %d", Game.game.getWaveCounter()), 5, 20);
-                header.fillText(String.format("Lives: %d", Game.game.getLives()), 5, 45);
-                header.fillText(String.format("Gold: %d", Game.game.getBalance()), 150, 20);
-                header.fillText(String.format("Killed: %d", Game.game.getKilled()), 150, 45);
-                Game.game.setHeaderRedraw(false);
+                header.fillText(String.format("Level: %d", game.getWaveCounter()), 5, 22);
+                header.fillText(String.format("Lives: %d", game.getLives()), 5, 48);
+                header.fillText(String.format("Gold: %d", game.getBalance()), 150, 22);
+                header.fillText(String.format("Killed: %d", game.getKilled()), 150, 48);
+                game.setHeaderRedraw(false);
             }
             if (redrawTowerInfo) {
+                gcTowerInfo.setFont(Font.font("Herculanum", 15));
+                gcTowerInfo.setFill(Color.DARKGREEN);
+                gcTowerInfo.fillRect(0, 0, gcTowerInfo.getCanvas().getWidth(), gcTowerInfo.getCanvas().getHeight());
+                gcTowerInfo.setStroke(Color.BLACK);
+                gcTowerInfo.strokeRoundRect(2, 2, gcTowerInfo.getCanvas().getWidth() - 4, gcTowerInfo.getCanvas().getHeight() - 4, 5, 5);
+                gcTowerInfo.setFill(Color.WHITE);
                 if (selected != null) {
-                    gcTowerInfo.setFont(Font.font("Herculanum", 15));
-                    gcTowerInfo.setFill(Color.DARKGREEN);
-                    gcTowerInfo.fillRect(0, 0, gcTowerInfo.getCanvas().getWidth(), gcTowerInfo.getCanvas().getHeight());
-                    gcTowerInfo.setFill(Color.WHITE);
                     gcTowerInfo.fillText(String.format("Range: %.1f", selected.getFireRange()), 5, 16);
                     gcTowerInfo.fillText(String.format("Power: %.1f", selected.getPower()), 5, 36);
                     gcTowerInfo.fillText(String.format("Armory: %.1f/%.1f", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
@@ -393,10 +395,10 @@ public class MainApp extends Application {
     };
 
     public static void main(String[] args) {
-        Game.game = new Game();
+        game = new Game();
         thread = new Thread(() -> {
             try {
-                Game.game.runGame();
+                game.runGame();
             } catch (InterruptedException ignored) {   }
         });
         thread.start();
