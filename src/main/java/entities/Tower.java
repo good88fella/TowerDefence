@@ -15,7 +15,7 @@ public class Tower extends GameObject {
         super(x, y, 1);
         fireRange = 5;
         power = 1;
-        maxHealth = 15;
+        maxHealth = 10;
         currentHealth = maxHealth;
         fireRangeUpgradeCost = 100;
         powerUpgradeCost = 30;
