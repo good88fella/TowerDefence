@@ -2,6 +2,7 @@ import entities.Enemy;
 import entities.Tower;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -10,6 +11,8 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import utils.GameObject;
 import utils.Orientation;
@@ -99,9 +102,9 @@ public class MainApp extends Application {
         vBox.getChildren().add(canvas1);
         vBox.getChildren().add(canvas);
 
-        explosion = new Image("explosion.png");
-        road = new Image("road.jpg");
-        field = new Image("field.jpg");
+        explosion = new Image("images/explosion.png");
+        road = new Image("images/road.jpg");
+        field = new Image("images/field.jpg");
 
         Scene scene = new Scene(vBox);
         primaryStage.setTitle("Tower Defence");
@@ -111,7 +114,7 @@ public class MainApp extends Application {
         at.start();
     }
 
-    private void DrawHealth(double x, double y, double percentage) {
+    private void drawHealth(double x, double y, double percentage) {
         double width = scale * 0.85;
         double startx = (scale - width) / 2 + x;
         gc.setFill(Color.DARKGRAY);
@@ -120,7 +123,7 @@ public class MainApp extends Application {
         gc.fillRoundRect(startx, y, width * percentage, 4, 2, 2);
     }
 
-    private void DrawBarrel(double startX, double startY, double barrelLength, double angle) {
+    private void drawBarrel(double startX, double startY, double barrelLength, double angle) {
         gc.save();
         gc.setFill(Color.BLACK);
         gc.translate(startX + scale / 2, startY + scale / 2);
@@ -138,7 +141,7 @@ public class MainApp extends Application {
         }
     }
 
-    private void DrawTower(Tower tower, long now) {
+    private void drawTower(Tower tower, long now) {
         double startX = tower.getX() * scale;
         double startY = tower.getY() * scale;
         gc.setFill(Color.DARKKHAKI);
@@ -147,13 +150,13 @@ public class MainApp extends Application {
         double r = scale * 0.9;
         gc.fillOval(startX + (scale - r) / 2 , startY + (scale - r) / 2, r, r);
         double barrelLength = scale * 0.8;
-        DrawBarrel(startX, startY, barrelLength, tower.getAngle());
+        drawBarrel(startX, startY, barrelLength, tower.getAngle());
         double percentage = tower.getCurrentHealth() / tower.getMaxHealth();
         healthDataList.add(new HealthData(startX, startY - 6, percentage));
         addToExploseAnim(tower, startX, startY, barrelLength, now);
     }
 
-    private void DrawWheels(Orientation orientation, double startX, double startY) {
+    private void drawWheels(Orientation orientation, double startX, double startY) {
         gc.setFill(Color.color(0.3, 0.3, 0.3));
         double wheelsSize = scale * 0.9;
         double arcR = wheelsSize / 8;
@@ -175,7 +178,7 @@ public class MainApp extends Application {
 
     }
 
-    private void DrawEnemy(Enemy enemy, long now) {
+    private void drawEnemy(Enemy enemy, long now) {
         double startX = enemy.getX() * scale;
         double startY = enemy.getY() * scale;
         gc.setFill(Color.BROWN);
@@ -183,22 +186,22 @@ public class MainApp extends Application {
         gc.fillOval(startX + (scale - towerDiameter) / 2,
                 startY + (scale - towerDiameter) / 2, towerDiameter, towerDiameter);
         if (enemy.getPrevPoint() == null)
-            DrawWheels(Orientation.HORIZONTAL, startX, startY);
+            drawWheels(Orientation.HORIZONTAL, startX, startY);
         else {
             Rect.Point prevPoint = enemy.getPrevPoint();
             if (prevPoint.getX() == enemy.getX()) {
-                DrawWheels(Orientation.VERTICAL, startX, startY);
+                drawWheels(Orientation.VERTICAL, startX, startY);
             } else {
-                DrawWheels(Orientation.HORIZONTAL, startX, startY);
+                drawWheels(Orientation.HORIZONTAL, startX, startY);
             }
         }
         double barrelLength = scale * 0.7;
-        DrawBarrel(startX, startY, barrelLength, enemy.getAngle());
+        drawBarrel(startX, startY, barrelLength, enemy.getAngle());
         healthDataList.add(new HealthData(startX, startY - 6, enemy.getCurrentHealth() / enemy.getMaxHealth()));
         addToExploseAnim(enemy, startX, startY, barrelLength, now);
     }
 
-    private void DrawField(long now) {
+    private void drawField(long now) {
         gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
         char[][] matrix = Game.game.getGameMap().getMatrix();
         for (int i = 0; i < matrix.length; i++) {
@@ -208,26 +211,40 @@ public class MainApp extends Application {
         }
 
         for (Tower tower : Game.game.getTowers()) {
-            DrawTower(tower, now);
+            drawTower(tower, now);
         }
         for (Enemy enemy : Game.game.getEnemies()) {
-            DrawEnemy(enemy, now);
+            drawEnemy(enemy, now);
         }
         for (HealthData healthData : healthDataList) {
-            DrawHealth(healthData.x, healthData.y, healthData.percentage);
+            drawHealth(healthData.x, healthData.y, healthData.percentage);
         }
         healthDataList.clear();
+    }
+
+    private void drawGameOver() {
+        double width = gc.getCanvas().getWidth();
+        double height = gc.getCanvas().getHeight();
+        double gameOverWidth = width * 0.8;
+        double gameOverHeight = height * 0.3;
+        int size = 50;
+
+        gc.setFill(Color.color(1,0,0, 0.5));
+        gc.fillRoundRect((width - gameOverWidth) / 2, (height - gameOverHeight) / 2, gameOverWidth, gameOverHeight, 20, 20);
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Comic Sans MS", size));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
+        gc.fillText("GAME OVER", (width - gameOverWidth) / 2 + gameOverWidth / 2,
+                (height - gameOverHeight) / 2 + gameOverHeight / 2);
+
     }
 
     protected AnimationTimer at = new AnimationTimer(){
         @Override
         public void handle(long now) {
-            if (Game.game.isGameOver()) {
-                at.stop();
-                return;
-            }
             if (Game.game.isNeedRedraw()) {
-                DrawField(now);
+                drawField(now);
                 Game.game.setNeedRedraw(false);
                 Iterator<ExplosionAnimation> iterExplAnim = explosionAnimations.iterator();
                 while (iterExplAnim.hasNext()) {
@@ -240,23 +257,28 @@ public class MainApp extends Application {
                         if (now - explAnim.now >= NANOSEC_PER_FRAME) {
                             int startX = explAnim.stage % ANIM_SPRITE_COLS;
                             int startY = explAnim.stage / ANIM_SPRITE_COLS;
-                            gc.drawImage(explosion, startX, startY, ANIM_FRAME_WIDTH, ANIM_FRAME_HEIGHT,
-                                    explAnim.x - scale , explAnim.y - scale , scale * 2 , scale * 2);
+                            gc.drawImage(explosion, startX * ANIM_FRAME_WIDTH,
+                                    startY * ANIM_FRAME_HEIGHT, ANIM_FRAME_WIDTH, ANIM_FRAME_HEIGHT,
+                                    explAnim.x - scale /2 , explAnim.y - scale /2 , scale, scale);
                             explAnim.now = now;
                             explAnim.stage++;
                             Game.game.setNeedRedraw(true);
                         }
                     }
                 }
+                if (Game.game.getLives() == 0) {
+                    drawGameOver();
+                }
             }
             if (Game.game.isHeaderRedraw()) {
+                header.setFont(Font.font("Herculanum", 20));
                 header.setFill(Color.DARKGREEN);
                 header.fillRect(0, 0, header.getCanvas().getWidth(), header.getCanvas().getHeight());
                 header.setFill(Color.WHITE);
                 header.fillText(String.format("Level: %d", Game.game.getWaveCounter()), 5, 20);
                 header.fillText(String.format("Lives: %d", Game.game.getLives()), 5, 45);
-                header.fillText(String.format("Gold: %d", Game.game.getBalance()), 100, 20);
-                header.fillText(String.format("Killed: %d", Game.game.getKilled()), 100, 45);
+                header.fillText(String.format("Gold: %d", Game.game.getBalance()), 150, 20);
+                header.fillText(String.format("Killed: %d", Game.game.getKilled()), 150, 45);
                 Game.game.setHeaderRedraw(false);
             }
         }
