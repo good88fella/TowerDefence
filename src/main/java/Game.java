@@ -18,9 +18,9 @@ public class Game {
     private int waveCounter;
     private int lives;
     private int killed;
-    private int armyRange = 3;
-    private int armyPower = 1;
-    private int armyHealth = 10;
+    private int armyRange;
+    private int armyPower;
+    private int armyHealth;
 
 
     public Game() {
@@ -32,6 +32,9 @@ public class Game {
         waveCounter = 0;
         lives = 1;
         killed = 0;
+        armyRange = 3;
+        armyPower = 1;
+        armyHealth = 10;
     }
 
     public void runGame() throws InterruptedException {
@@ -54,7 +57,7 @@ public class Game {
                     Tower tower = iterTowers.next();
                     if (tower.isAlive()) {
                         if (tower.fire(enemies)) {
-                            balance += 10;
+                            balance += (10 + 2 * waveCounter);
                             killed++;
                             headerRedraw = true;
                         }
@@ -141,23 +144,29 @@ public class Game {
             return false;
         switch (up) {
             case RANGE:
-                if (balance >= tower.getFireRangeUpgradeCost() + 50 * tower.getFireRangeUpgradeLvl()) {
-                    balance -= (tower.getFireRangeUpgradeCost() + 50 * tower.getFireRangeUpgradeLvl());
+                int upRangeCost = tower.getFireRangeUpgradeCost() + 40 * tower.getFireRangeUpgradeLvl();
+                if (balance >= upRangeCost) {
+                    balance -= upRangeCost;
                     tower.upgrade(Upgrade.RANGE);
+                    tower.setFireRangeUpgradeCost(upRangeCost);
                     return true;
                 }
                 break;
             case POWER:
-                if (balance >= tower.getPowerUpgradeCost() + 20 * tower.getPowerUpgradeLvl()) {
-                    balance -= (tower.getPowerUpgradeCost() + 20 * tower.getPowerUpgradeLvl());
+                int upPowerCost = tower.getPowerUpgradeCost() + 10 * tower.getPowerUpgradeLvl();
+                if (balance >= upPowerCost) {
+                    balance -= upPowerCost;
                     tower.upgrade(Upgrade.POWER);
+                    tower.setPowerUpgradeCost(upPowerCost);
                     return true;
                 }
                 break;
             case ARMOR:
-                if (balance >= tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl()) {
-                    balance -= (tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl());
+                int upArmorCost = tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl();
+                if (balance >= upArmorCost) {
+                    balance -= upArmorCost;
                     tower.upgrade(Upgrade.ARMOR);
+                    tower.setHealthUpgradeCost(upArmorCost);
                     return true;
                 }
                 break;
@@ -180,7 +189,7 @@ public class Game {
     public void upgradeArmy(int waveCounter) {
         if (waveCounter % 15 == 0) {
             armyRange += 1;
-        } else if (waveCounter % 4 == 0) {
+        } else if (waveCounter % 5 == 0) {
             armyPower += 1;
             armyHealth += 10;
         }
