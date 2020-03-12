@@ -18,6 +18,9 @@ public class Game {
     private int waveCounter;
     private int lives;
     private int killed;
+    private int armyRange;
+    private int armyPower;
+    private int armyHealth;
 
 
     public Game() {
@@ -138,22 +141,22 @@ public class Game {
             return false;
         switch (up) {
             case RANGE:
-                if (balance >= tower.getFireRangeUpgradeCost() + 10 * tower.getFireRangeUpgradeLvl()) {
-                    balance -= (tower.getFireRangeUpgradeCost() + 10 * tower.getFireRangeUpgradeLvl());
+                if (balance >= tower.getFireRangeUpgradeCost() + 50 * tower.getFireRangeUpgradeLvl()) {
+                    balance -= (tower.getFireRangeUpgradeCost() + 50 * tower.getFireRangeUpgradeLvl());
                     tower.upgrade(Upgrade.RANGE);
                     return true;
                 }
                 break;
             case POWER:
-                if (balance >= tower.getPowerUpgradeCost() + 3 * tower.getPowerUpgradeLvl()) {
-                    balance -= (tower.getPowerUpgradeCost() + 3 * tower.getPowerUpgradeLvl());
+                if (balance >= tower.getPowerUpgradeCost() + 20 * tower.getPowerUpgradeLvl()) {
+                    balance -= (tower.getPowerUpgradeCost() + 20 * tower.getPowerUpgradeLvl());
                     tower.upgrade(Upgrade.POWER);
                     return true;
                 }
                 break;
             case ARMOR:
-                if (balance >= tower.getHealthUpgradeCost() + 2 * tower.getHealthUpgradeLvl()) {
-                    balance -= (tower.getHealthUpgradeCost() + 2 * tower.getHealthUpgradeLvl());
+                if (balance >= tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl()) {
+                    balance -= (tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl());
                     tower.upgrade(Upgrade.ARMOR);
                     return true;
                 }
@@ -178,9 +181,12 @@ public class Game {
         for (Enemy enemy : enemyList) {
             if (waveCounter % 10 == 0) {
                 enemy.upgrade(Upgrade.RANGE);
+                armyRange = enemy.getFireRange();
             } else if (waveCounter % 2 == 0) {
                 enemy.upgrade(Upgrade.POWER);
                 enemy.upgrade(Upgrade.ARMOR);
+                armyPower = enemy.getPower();
+                armyHealth = enemy.getMaxHealth();
             } else {
                 break;
             }
@@ -245,5 +251,17 @@ public class Game {
 
     public int getKilled() {
         return killed;
+    }
+
+    public int getArmyRange() {
+        return armyRange;
+    }
+
+    public int getArmyPower() {
+        return armyPower;
+    }
+
+    public int getArmyHealth() {
+        return armyHealth;
     }
 }
