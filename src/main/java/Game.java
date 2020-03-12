@@ -2,11 +2,9 @@ import entities.Enemy;
 import entities.GameMap;
 import entities.Tower;
 import utils.Rect;
+import utils.Upgrade;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class Game {
 
@@ -15,7 +13,7 @@ public class Game {
     private boolean needRedraw;
     private boolean headerRedraw;
     private List<Enemy> enemies = Collections.synchronizedList(new ArrayList<>());
-    private List<Tower> towers = Collections.synchronizedList(new ArrayList<>());
+    private Set<Tower> towers = Collections.synchronizedSet(new HashSet<>());
     private boolean isGameOver = false;
     private int balance;
     private int waveCounter;
@@ -30,7 +28,7 @@ public class Game {
         this.gameMap.setFinish(new Rect.Point(49, 1));
         balance = 30;
         waveCounter = 0;
-        lives = 5;
+        lives = 1;
         killed = 0;
     }
 
@@ -40,6 +38,7 @@ public class Game {
             if (enemies.size() == 0) {
                 Thread.sleep(2000);
                 waveCounter++;
+                upgradeEnemy(enemies, waveCounter);
                 currentCount = waveCounter;
                 headerRedraw = true;
             }
@@ -48,7 +47,7 @@ public class Game {
                 currentCount--;
             }
             synchronized (towers) {
-                Iterator<Tower> iterTowers = this.towers.iterator();
+                Iterator<Tower> iterTowers = towers.iterator();
                 while (iterTowers.hasNext() && !isGameOver) {
                     Tower tower = iterTowers.next();
                     if (tower.isAlive()) {
@@ -65,12 +64,12 @@ public class Game {
             }
 
             synchronized (enemies) {
-                Iterator<Enemy> iterEnemies = this.enemies.iterator();
+                Iterator<Enemy> iterEnemies = enemies.iterator();
                 while (iterEnemies.hasNext() && !isGameOver) {
                     Enemy enemy = iterEnemies.next();
                     if (enemy.isAlive()) {
                         enemy.fire(towers);
-                        boolean ifFinished = enemy.move(this.gameMap);
+                        boolean ifFinished = enemy.move(gameMap);
                         if (ifFinished) {
                             lives--;
                             headerRedraw = true;
@@ -78,8 +77,10 @@ public class Game {
                     } else {
                         iterEnemies.remove();
                     }
-                    if (lives <= 0)
+                    if (lives <= 0) {
                         isGameOver = true;
+                        headerRedraw = true;
+                    }
                     needRedraw = true;
                 }
             }
@@ -95,8 +96,19 @@ public class Game {
         return gameMap;
     }
 
+    public Tower getTowerOnClick(double x, double y) {
+        if (towers.contains(new Tower(x, y))) {
+            for (Tower tower : towers) {
+                if (tower.getX() == x && tower.getY() == y)
+                    return tower;
+            }
+        }
+        createTower(x, y);
+        return null;
+    }
+
     public void createTower(double x, double y) {
-        if (balance - 10 >= 0 && isAvailableField(x, y)) {
+        if (balance - 10 >= 0 && isAvailableField(x, y) && !isGameOver) {
             towers.add(new Tower(x, y));
             balance -= 10;
             headerRedraw = true;
@@ -122,8 +134,56 @@ public class Game {
         return isAvailable;
     }
 
+    public boolean upgradeTower(Tower tower, Upgrade up) {
+        switch (up) {
+            case RANGE:
+                if (balance >= 100) {
+                    balance -= 100;
+                    tower.upgrade(Upgrade.RANGE);
+                    return true;
+                }
+                break;
+            case POWER:
+                if (balance >= 30) {
+                    balance -= 30;
+                    tower.upgrade(Upgrade.POWER);
+                    return true;
+                }
+                break;
+            case ARMOR:
+                if (balance >= 10) {
+                    balance -= 10;
+                    tower.upgrade(Upgrade.ARMOR);
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    public boolean destroyTower(double x, double y) {
+        if (towers.remove(new Tower(x, y))) {
+            needRedraw = true;
+            return true;
+        }
+        return false;
+    }
+
     public void createEnemy() {
         enemies.add(new Enemy(gameMap.getStart().getX(), gameMap.getStart().getY()));
+    }
+
+    public void upgradeEnemy(List<Enemy> enemyList, int waveCounter) {
+        for (Enemy enemy : enemyList) {
+            if (waveCounter % 10 == 0) {
+                enemy.upgrade(Upgrade.RANGE);
+            } else if (waveCounter % 2 == 0) {
+                enemy.upgrade(Upgrade.POWER);
+                enemy.upgrade(Upgrade.ARMOR);
+            } else {
+                break;
+            }
+        }
     }
 
     public boolean isNeedRedraw() {
@@ -134,7 +194,7 @@ public class Game {
         this.needRedraw = needRedraw;
     }
 
-    public List<Tower> getTowers() {
+    public Set<Tower> getTowers() {
         return towers;
     }
 
