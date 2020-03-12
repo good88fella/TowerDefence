@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
@@ -19,6 +20,7 @@ import java.util.Queue;
 public class MainApp extends Application {
     private double scale;
     private GraphicsContext gc;
+    private GraphicsContext header;
     private Image explosion;
     private Image road;
     private Image field;
@@ -29,11 +31,7 @@ public class MainApp extends Application {
     private final static int ANIM_FRAME_WIDTH = 256;
     private final static int ANIM_FRAME_HEIGHT = 256;
     private final static int NANOSEC_PER_FRAME = 20_000;
-    private final static double HEADER_HEIGHT = 100;
-
-    private double getAbsY() {
-        return HEADER_HEIGHT + 0;
-    }
+    private final static double HEADER_HEIGHT = 50;
 
     private static class ExplosionAnimation {
         private double x;
@@ -51,12 +49,12 @@ public class MainApp extends Application {
 
     private void addLines(double width, double height, Group group) {
         for (int i = 0; i <= height; i++) {
-            Line line = new Line(0, getAbsY() + i * scale, width * scale, getAbsY() + i * scale);
+            Line line = new Line(0, i * scale, width * scale,  i * scale);
             line.setStroke(Color.LIGHTGREY);
             group.getChildren().add(line);
         }
         for (int i = 0; i <= width; i++) {
-            Line line = new Line(i * scale, getAbsY() + 0, i * scale, getAbsY() + height * scale);
+            Line line = new Line(i * scale, 0, i * scale, height * scale);
             line.setStroke(Color.LIGHTGREY);
             group.getChildren().add(line);
         }
@@ -75,15 +73,18 @@ public class MainApp extends Application {
         canvas.setOnMousePressed(event -> {
             Game.game.createTower((int)(event.getX() / scale), (int)(event.getY() / scale));
         });
-        Group root = new Group();
-        addLines(width, height, root);
-        root.getChildren().add(canvas);
+        VBox vBox = new VBox();
+        Canvas canvas1 = new Canvas(width * scale, 50);
+        header = canvas1.getGraphicsContext2D();
+        
+        vBox.getChildren().add(canvas1);
+        vBox.getChildren().add(canvas);
 
         explosion = new Image("explosion.png");
         road = new Image("road.jpg");
         field = new Image("field.jpg");
 
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(vBox);
         primaryStage.setTitle("Tower Defence");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
@@ -183,7 +184,7 @@ public class MainApp extends Application {
                             int startX = explAnim.stage % ANIM_SPRITE_COLS;
                             int startY = explAnim.stage / ANIM_SPRITE_COLS;
                             gc.drawImage(explosion, startX, startY, ANIM_FRAME_WIDTH, ANIM_FRAME_HEIGHT,
-                                    explAnim.x - scale , explAnim.y - scale , scale *2 , scale *2 );
+                                    explAnim.x - scale , explAnim.y - scale , scale * 2 , scale * 2);
                             explAnim.now = now;
                             explAnim.stage++;
                             Game.game.setNeedRedraw(true);
@@ -191,6 +192,7 @@ public class MainApp extends Application {
                     }
                 }
             }
+
         }
     };
 
