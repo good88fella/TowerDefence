@@ -13,12 +13,12 @@ public class Enemy extends GameObject {
         super(x, y, 1);
         fireRange = 3;
         power = 1;
-        maxHealth = 100;
+        maxHealth = 10;
         currentHealth = maxHealth;
     }
 
-    public void fire(List<Tower> towers) {
-        super.fireAll(towers);
+    public boolean fire(List<Tower> towers) {
+        return super.fireAll(towers);
     }
 
     @Override

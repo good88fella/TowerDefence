@@ -27,9 +27,9 @@ public abstract class GameObject {
 
     public abstract void upgrade();
 
-    protected void fireAll(List<? extends GameObject> list) {
+    protected boolean fireAll(List<? extends GameObject> list) {
         if (list.isEmpty())
-            return;
+            return false;
         if (target != null && target.isAlive() &&
                  target.getClass().equals(list.get(0).getClass()) && getDistance(target) <= fireRange) {
             isShooting = true;
@@ -56,8 +56,10 @@ public abstract class GameObject {
             angle = Math.atan2(target.y - y, target.x - x) * 180 / Math.PI + 180;
             if (target.currentHealth <= 0) {
                 target.setAlive(false);
+                return true;
             }
         }
+        return false;
     }
 
     private double getDistance(GameObject gameObject) {
