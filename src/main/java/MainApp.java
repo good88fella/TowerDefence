@@ -11,6 +11,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -29,6 +30,7 @@ public class MainApp extends Application {
     private GraphicsContext gc;
     private GraphicsContext header;
     private GraphicsContext gcTowerInfo;
+    private GraphicsContext gcArmyInfo;
     private Image explosion;
     private Image road;
     private Image field;
@@ -116,6 +118,9 @@ public class MainApp extends Application {
         Button exit = new Button("Exit");
         exit.setMaxWidth(Double.MAX_VALUE);
         exit.setMaxHeight(Double.MAX_VALUE);
+        exit.setOnAction(event -> {
+            ((Stage)exit.getScene().getWindow()).close();
+        });
         GridPane.setMargin(exit, new Insets(10));
 
         buttonBox.setStyle("-fx-background-color: #006400");
@@ -167,9 +172,7 @@ public class MainApp extends Application {
 
         Canvas canvasArmyInfo = new Canvas(width * 0.2, HEADER_HEIGHT);
         AnchorPane anchorPane1 = new AnchorPane();
-        GraphicsContext gcArmyInfo = canvasArmyInfo.getGraphicsContext2D();
-        gcArmyInfo.setFill(Color.ANTIQUEWHITE);
-        gcArmyInfo.fillRect(0, 0, gcArmyInfo.getCanvas().getWidth(), gcArmyInfo.getCanvas().getHeight());
+        gcArmyInfo = canvasArmyInfo.getGraphicsContext2D();
         anchorPane1.getChildren().add(canvasArmyInfo);
 
         hBox.getChildren().add(info);
@@ -188,8 +191,12 @@ public class MainApp extends Application {
         Canvas canvas = new Canvas(width * scale, height * scale);
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
-            selected = game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
-            redrawTowerInfo = true;
+            if (event.getButton() == MouseButton.PRIMARY) {
+                selected = game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
+                redrawTowerInfo = true;
+            } else if (event.getButton() == MouseButton.SECONDARY) {
+                game.destroyTower((int)(event.getX() / scale), (int)(event.getY() / scale));
+            }
         });
         VBox vBox = new VBox();
         HBox hBox = createHeader(width * scale);
@@ -246,7 +253,7 @@ public class MainApp extends Application {
         gc.fillOval(startX + (scale - r) / 2 , startY + (scale - r) / 2, r, r);
         double barrelLength = scale * 0.8;
         drawBarrel(startX, startY, barrelLength, tower.getAngle());
-        double percentage = tower.getCurrentHealth() / tower.getMaxHealth();
+        double percentage = (double)tower.getCurrentHealth() / tower.getMaxHealth();
         healthDataList.add(new HealthData(startX, startY - 6, percentage));
         addToExploseAnim(tower, startX, startY, barrelLength, now);
     }
@@ -292,7 +299,7 @@ public class MainApp extends Application {
         }
         double barrelLength = scale * 0.7;
         drawBarrel(startX, startY, barrelLength, enemy.getAngle());
-        healthDataList.add(new HealthData(startX, startY - 6, enemy.getCurrentHealth() / enemy.getMaxHealth()));
+        healthDataList.add(new HealthData(startX, startY - 6, (double)enemy.getCurrentHealth() / enemy.getMaxHealth()));
         addToExploseAnim(enemy, startX, startY, barrelLength, now);
     }
 
@@ -373,8 +380,18 @@ public class MainApp extends Application {
                 header.setFill(Color.WHITE);
                 header.fillText(String.format("Level: %d", game.getWaveCounter()), 5, 22);
                 header.fillText(String.format("Lives: %d", game.getLives()), 5, 48);
-                header.fillText(String.format("Gold: %d", game.getBalance()), 150, 22);
-                header.fillText(String.format("Killed: %d", game.getKilled()), 150, 48);
+                header.fillText(String.format("Gold: %d", game.getBalance()), 170, 22);
+                header.fillText(String.format("Killed: %d", game.getKilled()), 170, 48);
+
+                gcArmyInfo.setFont(Font.font("Herculanum", 15));
+                gcArmyInfo.setFill(Color.DARKGREEN);
+                gcArmyInfo.fillRect(0, 0, gcArmyInfo.getCanvas().getWidth(), gcArmyInfo.getCanvas().getHeight());
+                gcArmyInfo.setStroke(Color.BLACK);
+                gcArmyInfo.strokeRoundRect(2, 2, gcArmyInfo.getCanvas().getWidth() - 4, gcArmyInfo.getCanvas().getHeight() - 4, 5, 5);
+                gcArmyInfo.setFill(Color.WHITE);
+                gcArmyInfo.fillText(String.format("Range: %d", 0), 5, 16);
+                gcArmyInfo.fillText(String.format("Power: %d", 0), 5, 36);
+                gcArmyInfo.fillText(String.format("Max armory: %d", 0), 5, 55);
                 game.setHeaderRedraw(false);
             }
             if (redrawTowerInfo) {
@@ -385,9 +402,12 @@ public class MainApp extends Application {
                 gcTowerInfo.strokeRoundRect(2, 2, gcTowerInfo.getCanvas().getWidth() - 4, gcTowerInfo.getCanvas().getHeight() - 4, 5, 5);
                 gcTowerInfo.setFill(Color.WHITE);
                 if (selected != null) {
-                    gcTowerInfo.fillText(String.format("Range: %.1f", selected.getFireRange()), 5, 16);
-                    gcTowerInfo.fillText(String.format("Power: %.1f", selected.getPower()), 5, 36);
-                    gcTowerInfo.fillText(String.format("Armory: %.1f/%.1f", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
+                    gcTowerInfo.fillText(String.format("Range: %d", selected.getFireRange()), 5, 16);
+                    gcTowerInfo.fillText(String.format("Power: %d", selected.getPower()), 5, 36);
+                    gcTowerInfo.fillText(String.format("Armory: %d/%d", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
+                    gcTowerInfo.fillText(String.format("lvl: %d", selected.getFireRangeUpgradeLvl()), 120, 16);
+                    gcTowerInfo.fillText(String.format("lvl: %d", selected.getPowerUpgradeLvl()), 120, 36);
+                    gcTowerInfo.fillText(String.format("lvl: %d", selected.getHealthUpgradeLvl()), 120, 55);
                 }
                 redrawTowerInfo = false;
             }
