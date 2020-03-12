@@ -1,7 +1,6 @@
 package utils;
 
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public abstract class GameObject {
 
@@ -16,6 +15,9 @@ public abstract class GameObject {
     protected boolean isAlive;
     protected GameObject target;
     protected boolean isShooting;
+    protected int fireRangeUpgradeLvl = 0;
+    protected int powerUpgradeLvl = 0;
+    protected int healthUpgradeLvl = 0;
 
     public GameObject(double x, double y, double radius) {
         this.x = x;
@@ -25,13 +27,30 @@ public abstract class GameObject {
         isShooting = false;
     }
 
-    public abstract void upgrade();
+    public void upgrade(Upgrade up) {
+        switch (up) {
+            case ARMOR:
+                maxHealth += 10;
+                currentHealth += 10;
+                healthUpgradeLvl++;
+                break;
+            case POWER:
+                power++;
+                powerUpgradeLvl++;
+                break;
+            case RANGE:
+                fireRange++;
+                fireRangeUpgradeLvl++;
+                break;
+        }
+    }
 
-    protected boolean fireAll(List<? extends GameObject> list) {
+    protected boolean fireAll(Collection<? extends GameObject> list) {
         if (list.isEmpty())
             return false;
         if (target != null && target.isAlive() &&
-                 target.getClass().equals(list.get(0).getClass()) && getDistance(target) <= fireRange) {
+                 target.getClass().equals(new ArrayList<>(list).get(0).getClass()) &&
+                getDistance(target) <= fireRange) {
             isShooting = true;
         } else {
             GameObject tmpTarget = null;

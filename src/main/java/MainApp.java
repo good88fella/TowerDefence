@@ -99,9 +99,9 @@ public class MainApp extends Application {
         vBox.getChildren().add(canvas1);
         vBox.getChildren().add(canvas);
 
-        explosion = new Image("explosion.png");
-        road = new Image("road.jpg");
-        field = new Image("field.jpg");
+        explosion = new Image("images/explosion.png");
+        road = new Image("images/road.jpg");
+        field = new Image("images/field.jpg");
 
         Scene scene = new Scene(vBox);
         primaryStage.setTitle("Tower Defence");

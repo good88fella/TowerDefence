@@ -3,6 +3,7 @@ package entities;
 import utils.GameObject;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Tower extends GameObject {
 
@@ -10,7 +11,7 @@ public class Tower extends GameObject {
         super(x, y, 1);
         fireRange = 5;
         power = 1;
-        maxHealth = 20;
+        maxHealth = 10;
         currentHealth = maxHealth;
     }
 
@@ -18,7 +19,17 @@ public class Tower extends GameObject {
         return super.fireAll(enemies);
     }
 
-    public void upgrade() {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tower that = (Tower) o;
+        return Double.compare(that.x, x) == 0 &&
+                Double.compare(that.y, y) == 0;
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
     }
 }
