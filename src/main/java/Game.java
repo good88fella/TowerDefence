@@ -35,7 +35,7 @@ public class Game {
 
     public void runGame() throws InterruptedException {
         int currentCount = 0;
-        while (!isGameOver) {
+        while (!isGameOver && !Thread.interrupted()) {
             if (enemies.size() == 0) {
                 Thread.sleep(2000);
                 waveCounter++;
@@ -91,12 +91,30 @@ public class Game {
     }
 
     public void createTower(double x, double y) {
-        if (balance - 10 >= 0) {
+        if (balance - 10 >= 0 && isAvailableField(x, y)) {
             towers.add(new Tower(x, y));
             balance -= 10;
             headerRedraw = true;
         }
         setNeedRedraw(true);
+    }
+
+    private boolean isAvailableField(double x, double y) {
+        boolean isAvailable = false;
+        for (Rect rect : gameMap.getFieldsCoordinates()) {
+            if (x >= rect.getStart().getX() && x <= rect.getEnd().getX() &&
+                    y >= rect.getStart().getY() && y <= rect.getEnd().getY()) {
+                isAvailable = true;
+                break;
+            }
+        }
+        for (Tower tower : towers) {
+            if (tower.getX() == x && tower.getY() == y) {
+                isAvailable = false;
+                break;
+            }
+        }
+        return isAvailable;
     }
 
     public void createEnemy() {
