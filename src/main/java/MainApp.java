@@ -2,10 +2,11 @@ import entities.Enemy;
 import entities.Tower;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -14,7 +15,6 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
@@ -31,6 +31,8 @@ public class MainApp extends Application {
     private GraphicsContext header;
     private GraphicsContext gcTowerInfo;
     private GraphicsContext gcArmyInfo;
+    private VBox buttonsTower;
+    private Button startPause;
     private Image explosion;
     private Image road;
     private Image field;
@@ -74,22 +76,35 @@ public class MainApp extends Application {
         }
     }
 
-    private void addLines(double width, double height, Group group) {
-        for (int i = 0; i <= height; i++) {
-            Line line = new Line(0, i * scale, width * scale,  i * scale);
-            line.setStroke(Color.LIGHTGREY);
-            group.getChildren().add(line);
-        }
-        for (int i = 0; i <= width; i++) {
-            Line line = new Line(i * scale, 0, i * scale, height * scale);
-            line.setStroke(Color.LIGHTGREY);
-            group.getChildren().add(line);
-        }
-    }
-
     @Override
     public void stop() throws Exception {
         thread.interrupt();
+    }
+
+    Button createUpgradeButton(double width, EventHandler<ActionEvent> value) {
+        Button button = new Button();
+        button.setPrefWidth(width * 0.05);
+        button.setFont(Font.font(9));
+        button.setMaxHeight(13);
+        button.setOnAction(value);
+        return button;
+    }
+
+    private void launchNewGame() {
+
+    }
+
+    private void startStopHandle() {
+        if (game == null) {
+            launchNewGame();
+        }
+        else {
+            if (game.getLives() == 0) {
+                launchNewGame();
+            } else {
+                game.setLives(0);
+            }
+        }
     }
 
     HBox createHeader(double width) {
@@ -110,10 +125,13 @@ public class MainApp extends Application {
         row1.setPercentHeight(100);
         buttonBox.getRowConstraints().add(row1);
 
-        Button startFinish = new Button("Start/Stop");
-        startFinish.setMaxWidth(Double.MAX_VALUE);
-        startFinish.setMaxHeight(Double.MAX_VALUE);
-        GridPane.setMargin(startFinish, new Insets(10));
+        startPause= new Button("Start");
+        startPause.setMaxWidth(Double.MAX_VALUE);
+        startPause.setMaxHeight(Double.MAX_VALUE);
+        startPause.setOnAction(event -> {
+            startStopHandle();
+        });
+        GridPane.setMargin(startPause, new Insets(10));
 
         Button exit = new Button("Exit");
         exit.setMaxWidth(Double.MAX_VALUE);
@@ -125,7 +143,7 @@ public class MainApp extends Application {
 
         buttonBox.setStyle("-fx-background-color: #006400");
 
-        buttonBox.add(startFinish, 0, 0);
+        buttonBox.add(startPause, 0, 0);
         buttonBox.add(exit, 1, 0);
         buttonBox.setAlignment(Pos.CENTER);
 
@@ -134,41 +152,29 @@ public class MainApp extends Application {
         gcTowerInfo = canvasTowerInfo.getGraphicsContext2D();
         gcTowerInfo.setFill(Color.DARKGREEN);
         gcTowerInfo.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
-        VBox vButtons = new VBox(2);
-        Button button1 = new Button("\u2191 something");
-        button1.setPrefWidth(width * 0.05);
-        button1.setFont(Font.font(9));
-        button1.setMaxHeight(13);
-        button1.setOnAction(event -> {
+        buttonsTower = new VBox(2);
+        Button button1 = createUpgradeButton(width, event -> {
             if (game.upgradeTower(selected, Upgrade.RANGE))
                 redrawTowerInfo = true;
         });
-        vButtons.getChildren().add(button1);
-        Button button2 = new Button("\u2191 something");
-        button2.setPrefWidth(width * 0.05);
-        button2.setFont(Font.font(9));
-        button2.setMaxHeight(13);
-        button2.setOnAction(event -> {
+        buttonsTower.getChildren().add(button1);
+        Button button2 = createUpgradeButton(width, event -> {
             if (game.upgradeTower(selected, Upgrade.POWER))
                 redrawTowerInfo = true;
         });
-        vButtons.getChildren().add(button2);
-        Button button3 = new Button("\u2191 something");
-        button3.setPrefWidth(width * 0.05);
-        button3.setFont(Font.font(9));
-        button3.setMaxHeight(13);
-        button3.setOnAction(event -> {
+        buttonsTower.getChildren().add(button2);
+        Button button3 = createUpgradeButton(width, event -> {
             if (game.upgradeTower(selected, Upgrade.ARMOR))
                 redrawTowerInfo = true;
         });
-        vButtons.getChildren().add(button3);
-        AnchorPane.setRightAnchor(vButtons, 5.0);
-        AnchorPane.setTopAnchor(vButtons, 5.0);
-        AnchorPane.setBottomAnchor(vButtons, 5.0);
+        buttonsTower.getChildren().add(button3);
+        AnchorPane.setRightAnchor(buttonsTower, 5.0);
+        AnchorPane.setTopAnchor(buttonsTower, 5.0);
+        AnchorPane.setBottomAnchor(buttonsTower, 5.0);
 
 
         anchorPane.getChildren().add(canvasTowerInfo);
-        anchorPane.getChildren().add(vButtons);
+        anchorPane.getChildren().add(buttonsTower);
 
         Canvas canvasArmyInfo = new Canvas(width * 0.2, HEADER_HEIGHT);
         AnchorPane anchorPane1 = new AnchorPane();
@@ -369,6 +375,7 @@ public class MainApp extends Application {
                 }
                 if (game.getLives() == 0) {
                     drawGameOver();
+                    startPause.setText("Start");
                 }
             }
             if (game.isHeaderRedraw()) {
@@ -402,12 +409,18 @@ public class MainApp extends Application {
                 gcTowerInfo.strokeRoundRect(2, 2, gcTowerInfo.getCanvas().getWidth() - 4, gcTowerInfo.getCanvas().getHeight() - 4, 5, 5);
                 gcTowerInfo.setFill(Color.WHITE);
                 if (selected != null) {
+                    buttonsTower.setVisible(true);
+                    ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + selected.getFireRangeUpgradeCost());
+                    ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + selected.getPowerUpgradeCost());
+                    ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + selected.getHealthUpgradeCost());
                     gcTowerInfo.fillText(String.format("Range: %d", selected.getFireRange()), 5, 16);
                     gcTowerInfo.fillText(String.format("Power: %d", selected.getPower()), 5, 36);
                     gcTowerInfo.fillText(String.format("Armory: %d/%d", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
                     gcTowerInfo.fillText(String.format("lvl: %d", selected.getFireRangeUpgradeLvl()), 120, 16);
                     gcTowerInfo.fillText(String.format("lvl: %d", selected.getPowerUpgradeLvl()), 120, 36);
                     gcTowerInfo.fillText(String.format("lvl: %d", selected.getHealthUpgradeLvl()), 120, 55);
+                } else {
+                    buttonsTower.setVisible(false);
                 }
                 redrawTowerInfo = false;
             }
