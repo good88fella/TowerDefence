@@ -79,7 +79,7 @@ public class MainApp extends Application {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         thread.interrupt();
     }
 
@@ -139,17 +139,13 @@ public class MainApp extends Application {
         startPause= new Button("Start");
         startPause.setMaxWidth(Double.MAX_VALUE);
         startPause.setMaxHeight(Double.MAX_VALUE);
-        startPause.setOnAction(event -> {
-            startStopHandle();
-        });
+        startPause.setOnAction(event -> startStopHandle());
         GridPane.setMargin(startPause, new Insets(10));
 
         Button exit = new Button("Exit");
         exit.setMaxWidth(Double.MAX_VALUE);
         exit.setMaxHeight(Double.MAX_VALUE);
-        exit.setOnAction(event -> {
-            ((Stage)exit.getScene().getWindow()).close();
-        });
+        exit.setOnAction(event -> ((Stage)exit.getScene().getWindow()).close());
         GridPane.setMargin(exit, new Insets(10));
 
         buttonBox.setStyle("-fx-background-color: #006400");
@@ -188,7 +184,6 @@ public class MainApp extends Application {
         AnchorPane.setRightAnchor(buttonsTower, 5.0);
         AnchorPane.setTopAnchor(buttonsTower, 5.0);
         AnchorPane.setBottomAnchor(buttonsTower, 5.0);
-
 
         anchorPane.getChildren().add(canvasTowerInfo);
         anchorPane.getChildren().add(buttonsTower);
@@ -301,7 +296,6 @@ public class MainApp extends Application {
                     startY + (scale - wheelsSize) / 2 + wheelsSize * 4 / 5,
                     wheelsSize, wheelsSize / 5, arcR, arcR);
         }
-
     }
 
     private void drawEnemy(Enemy enemy, long now) {
@@ -362,7 +356,15 @@ public class MainApp extends Application {
         gc.setTextBaseline(VPos.CENTER);
         gc.fillText("GAME OVER", (width - gameOverWidth) / 2 + gameOverWidth / 2,
                 (height - gameOverHeight) / 2 + gameOverHeight / 2);
+    }
 
+
+    private void fillGc(GraphicsContext gc) {
+        gc.setFill(Color.DARKGREEN);
+        gc.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+        gc.setStroke(Color.BLACK);
+        gc.strokeRoundRect(2, 2, gc.getCanvas().getWidth() - 4, gc.getCanvas().getHeight() - 4, 5, 5);
+        gc.setFill(Color.WHITE);
     }
 
     protected AnimationTimer at = new AnimationTimer(){
@@ -398,22 +400,14 @@ public class MainApp extends Application {
             }
             if (game.isHeaderRedraw()) {
                 header.setFont(Font.font("Herculanum", 20));
-                header.setFill(Color.DARKGREEN);
-                header.fillRect(0, 0, header.getCanvas().getWidth(), header.getCanvas().getHeight());
-                header.setStroke(Color.BLACK);
-                header.strokeRoundRect(2, 2, header.getCanvas().getWidth() - 4, header.getCanvas().getHeight() - 4, 5, 5);
-                header.setFill(Color.WHITE);
+                fillGc(header);
                 header.fillText(String.format("Level: %d", game.getWaveCounter()), 5, 22);
                 header.fillText(String.format("Lives: %d", game.getLives()), 5, 48);
                 header.fillText(String.format("Gold: %d", game.getBalance()), 170, 22);
                 header.fillText(String.format("Killed: %d", game.getKilled()), 170, 48);
 
                 gcArmyInfo.setFont(Font.font("Herculanum", 15));
-                gcArmyInfo.setFill(Color.DARKGREEN);
-                gcArmyInfo.fillRect(0, 0, gcArmyInfo.getCanvas().getWidth(), gcArmyInfo.getCanvas().getHeight());
-                gcArmyInfo.setStroke(Color.BLACK);
-                gcArmyInfo.strokeRoundRect(2, 2, gcArmyInfo.getCanvas().getWidth() - 4, gcArmyInfo.getCanvas().getHeight() - 4, 5, 5);
-                gcArmyInfo.setFill(Color.WHITE);
+                fillGc(gcArmyInfo);
                 gcArmyInfo.fillText(String.format("Range: %d", game.getArmyRange()), 5, 16);
                 gcArmyInfo.fillText(String.format("Power: %d", game.getArmyPower()), 5, 36);
                 gcArmyInfo.fillText(String.format("Max armory: %d", game.getArmyHealth()), 5, 55);
@@ -421,11 +415,7 @@ public class MainApp extends Application {
             }
             if (redrawTowerInfo) {
                 gcTowerInfo.setFont(Font.font("Herculanum", 15));
-                gcTowerInfo.setFill(Color.DARKGREEN);
-                gcTowerInfo.fillRect(0, 0, gcTowerInfo.getCanvas().getWidth(), gcTowerInfo.getCanvas().getHeight());
-                gcTowerInfo.setStroke(Color.BLACK);
-                gcTowerInfo.strokeRoundRect(2, 2, gcTowerInfo.getCanvas().getWidth() - 4, gcTowerInfo.getCanvas().getHeight() - 4, 5, 5);
-                gcTowerInfo.setFill(Color.WHITE);
+                fillGc(gcTowerInfo);
                 if (selected != null) {
                     buttonsTower.setVisible(true);
                     ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + selected.getFireRangeUpgradeCost());
