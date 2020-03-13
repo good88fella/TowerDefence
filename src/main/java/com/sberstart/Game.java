@@ -11,11 +11,11 @@ import java.util.*;
 public class Game {
 
     private GameMap gameMap;
-    private boolean needRedraw;
-    private boolean headerRedraw;
+    private volatile boolean needRedraw;
+    private volatile boolean headerRedraw;
     private List<Enemy> enemies = Collections.synchronizedList(new ArrayList<>());
     private Set<Tower> towers = Collections.synchronizedSet(new HashSet<>());
-    private boolean isGameOver = false;
+    private volatile boolean isGameOver = false;
     private int balance;
     private int waveCounter;
     private int lives;
@@ -23,7 +23,7 @@ public class Game {
     private int armyRange;
     private int armyPower;
     private int armyHealth;
-    private boolean isStarted;
+    private volatile boolean isStarted;
     private int currentCount;
     private int respawn;
 
@@ -36,7 +36,7 @@ public class Game {
         towers.clear();
         balance = 30;
         waveCounter = 0;
-        lives = 5;
+        lives = 1;
         killed = 0;
         armyRange = 3;
         armyPower = 1;

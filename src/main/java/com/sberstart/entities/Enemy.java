@@ -30,12 +30,6 @@ public class Enemy extends GameObject {
     }
 
     public boolean move(GameMap gameMap) {
-/*
-        if (prevPoint != null && new Rect.Point(x, y).equals(gameMap.getFinish()) && isAlive) {
-            isAlive = false;
-            return true;
-        }
-*/
         Rect.Point nextPoint;
         if (prevPoint == null) {
             nextPoint = gameMap.getStart();
@@ -116,7 +110,7 @@ public class Enemy extends GameObject {
         return null;
     }
 
-    private Rect.Point findNextPoint(GameMap gameMap, double x, double y) {
+    private Rect.Point getNextPoint(GameMap gameMap, double x, double y) {
         char[][] matrix = gameMap.getMatrix();
         Rect.Point nextPoint;
         nextPoint = goDown(matrix, x, y);
@@ -130,24 +124,6 @@ public class Enemy extends GameObject {
             nextPoint = goLeft(matrix, x, y);
         }
         return nextPoint;
-    }
-
-    private Rect.Point getNextPoint(GameMap gameMap, double x, double y) {
-        /*Rect.Point nextPoint = null;
-        if (y != gameMap.getHeight() - 1 && !prevPoint.equals(new Rect.Point(x, y + speed)) &&
-                gameMap.getMatrix()[(int) (y + speed)][(int) x] == '#')
-            nextPoint = new Rect.Point(x, y + speed);
-        else if (y != 0 && !prevPoint.equals(new Rect.Point(x, y - speed))
-                && gameMap.getMatrix()[(int) (y - speed)][(int) x] == '#')
-            nextPoint = new Rect.Point(x, y - speed);
-        else if (x != gameMap.getWidth() - 1 && !prevPoint.equals(new Rect.Point(x + speed, y)) &&
-                gameMap.getMatrix()[(int) y][(int) (x + speed)] == '#')
-            nextPoint = new Rect.Point(x + speed, y);
-        else if (x != 0 && !prevPoint.equals(new Rect.Point(x - speed, y)) &&
-                gameMap.getMatrix()[(int) y][(int) (x - speed)] == '#')
-            nextPoint = new Rect.Point(x - speed, y);
-        return nextPoint;*/
-        return findNextPoint(gameMap, x, y);
     }
 
     public Rect.Point getPrevPoint() {
