@@ -1,6 +1,7 @@
 package entities;
 
 import utils.GameObject;
+import utils.Upgrade;
 
 import java.util.List;
 import java.util.Objects;
@@ -10,16 +11,40 @@ public class Tower extends GameObject {
     private int fireRangeUpgradeCost;
     private int powerUpgradeCost;
     private int healthUpgradeCost;
+    private int fireRangeUpgradeLvl;
+    private int powerUpgradeLvl;
+    private int healthUpgradeLvl;
 
     public Tower(double x, double y) {
         super(x, y, 1);
         fireRange = 5;
         power = 1;
-        maxHealth = 10;
+        maxHealth = 15;
         currentHealth = maxHealth;
         fireRangeUpgradeCost = 100;
         powerUpgradeCost = 30;
         healthUpgradeCost = 10;
+        fireRangeUpgradeLvl = 0;
+        powerUpgradeLvl = 0;
+        healthUpgradeLvl = 0;
+    }
+
+    public void upgrade(Upgrade up) {
+        switch (up) {
+            case ARMOR:
+                maxHealth += 15;
+                currentHealth += 15;
+                healthUpgradeLvl++;
+                break;
+            case POWER:
+                power++;
+                powerUpgradeLvl++;
+                break;
+            case RANGE:
+                fireRange++;
+                fireRangeUpgradeLvl++;
+                break;
+        }
     }
 
     public boolean fire(List<Enemy> enemies) {
@@ -62,5 +87,17 @@ public class Tower extends GameObject {
 
     public void setHealthUpgradeCost(int healthUpgradeCost) {
         this.healthUpgradeCost = healthUpgradeCost;
+    }
+
+    public int getFireRangeUpgradeLvl() {
+        return fireRangeUpgradeLvl;
+    }
+
+    public int getPowerUpgradeLvl() {
+        return powerUpgradeLvl;
+    }
+
+    public int getHealthUpgradeLvl() {
+        return healthUpgradeLvl;
     }
 }

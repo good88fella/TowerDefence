@@ -34,7 +34,7 @@ public class Game {
         towers.clear();
         balance = 30;
         waveCounter = 0;
-        lives = 1;
+        lives = 5;
         killed = 0;
         armyRange = 3;
         armyPower = 1;
@@ -60,45 +60,69 @@ public class Game {
                     createEnemy();
                     currentCount--;
                 }
-                synchronized (towers) {
-                    Iterator<Tower> iterTowers = towers.iterator();
-                    while (iterTowers.hasNext() && !isGameOver) {
-                        Tower tower = iterTowers.next();
-                        if (tower.isAlive()) {
-                            if (tower.fire(enemies)) {
-                                balance += (10 + 2 * waveCounter);
-                                killed++;
-                                headerRedraw = true;
-                            }
-                        } else {
-                            iterTowers.remove();
-                        }
-                        needRedraw = true;
-                    }
-                }
 
-                synchronized (enemies) {
-                    Iterator<Enemy> iterEnemies = enemies.iterator();
-                    while (iterEnemies.hasNext() && !isGameOver) {
-                        Enemy enemy = iterEnemies.next();
-                        if (enemy.isAlive()) {
-                            enemy.fire(towers);
-                            boolean ifFinished = enemy.move(gameMap);
-                            if (ifFinished) {
-                                lives--;
-                                headerRedraw = true;
-                            }
-                        } else {
-                            iterEnemies.remove();
-                        }
-                        if (lives <= 0) {
-                            isGameOver = true;
-                            headerRedraw = true;
-                        }
-                        needRedraw = true;
-                    }
-                }
+                towerAttack();
+                enemyAttack();
+                enemyMove();
+
                 Thread.sleep(200);
+            }
+        }
+    }
+
+    private void towerAttack() {
+        synchronized (towers) {
+            Iterator<Tower> iterTowers = towers.iterator();
+            while (iterTowers.hasNext() && !isGameOver) {
+                Tower tower = iterTowers.next();
+                if (tower.isAlive()) {
+                    if (tower.fire(enemies)) {
+                        balance += (10 + waveCounter);
+                        killed++;
+                        headerRedraw = true;
+                    }
+                } else {
+                    iterTowers.remove();
+                }
+                needRedraw = true;
+            }
+        }
+    }
+
+    private void enemyAttack() {
+        synchronized (enemies) {
+            Iterator<Enemy> iterEnemies = enemies.iterator();
+            while (iterEnemies.hasNext()) {
+                Enemy enemy = iterEnemies.next();
+                if (enemy.isAlive()) {
+                    enemy.fire(towers);
+                } else {
+                    iterEnemies.remove();
+                }
+                needRedraw = true;
+            }
+        }
+    }
+
+    private void enemyMove() {
+        synchronized (enemies) {
+            Iterator<Enemy> iterEnemies = enemies.iterator();
+            while (iterEnemies.hasNext()) {
+                Enemy enemy = iterEnemies.next();
+                if (enemy.isAlive()) {
+                    boolean ifFinished = enemy.move(gameMap);
+                    if (ifFinished) {
+                        lives--;
+                        headerRedraw = true;
+                    }
+                } else {
+                    iterEnemies.remove();
+                }
+                if (lives <= 0) {
+                    isGameOver = true;
+                    headerRedraw = true;
+                }
+                needRedraw = true;
             }
         }
     }
@@ -154,29 +178,26 @@ public class Game {
             return false;
         switch (up) {
             case RANGE:
-                int upRangeCost = tower.getFireRangeUpgradeCost() + 40 * (tower.getFireRangeUpgradeLvl() + 1);
-                if (balance >= upRangeCost) {
-                    balance -= upRangeCost;
+                if (balance >= tower.getFireRangeUpgradeCost()) {
+                    balance -= tower.getFireRangeUpgradeCost();
                     tower.upgrade(Upgrade.RANGE);
-                    tower.setFireRangeUpgradeCost(upRangeCost);
+                    tower.setFireRangeUpgradeCost(tower.getFireRangeUpgradeCost() + 40 * tower.getFireRangeUpgradeLvl());
                     return true;
                 }
                 break;
             case POWER:
-                int upPowerCost = tower.getPowerUpgradeCost() + 10 * (tower.getPowerUpgradeLvl() + 1);
-                if (balance >= upPowerCost) {
-                    balance -= upPowerCost;
+                if (balance >= tower.getPowerUpgradeCost()) {
+                    balance -= tower.getPowerUpgradeCost();
                     tower.upgrade(Upgrade.POWER);
-                    tower.setPowerUpgradeCost(upPowerCost);
+                    tower.setPowerUpgradeCost(tower.getPowerUpgradeCost() + 10 * tower.getPowerUpgradeLvl());
                     return true;
                 }
                 break;
             case ARMOR:
-                int upArmorCost = tower.getHealthUpgradeCost() + 5 * (tower.getHealthUpgradeLvl() + 1);
-                if (balance >= upArmorCost) {
-                    balance -= upArmorCost;
+                if (balance >= tower.getHealthUpgradeCost()) {
+                    balance -= tower.getHealthUpgradeCost();
                     tower.upgrade(Upgrade.ARMOR);
-                    tower.setHealthUpgradeCost(upArmorCost);
+                    tower.setHealthUpgradeCost(tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl());
                     return true;
                 }
                 break;

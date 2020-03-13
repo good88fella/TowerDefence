@@ -15,9 +15,6 @@ public abstract class GameObject {
     protected boolean isAlive;
     protected GameObject target;
     protected boolean isShooting;
-    protected int fireRangeUpgradeLvl = 0;
-    protected int powerUpgradeLvl = 0;
-    protected int healthUpgradeLvl = 0;
 
     public GameObject(double x, double y, double radius) {
         this.x = x;
@@ -25,24 +22,6 @@ public abstract class GameObject {
         this.radius = radius;
         isAlive = true;
         isShooting = false;
-    }
-
-    public void upgrade(Upgrade up) {
-        switch (up) {
-            case ARMOR:
-                maxHealth += 10;
-                currentHealth += 10;
-                healthUpgradeLvl++;
-                break;
-            case POWER:
-                power++;
-                powerUpgradeLvl++;
-                break;
-            case RANGE:
-                fireRange++;
-                fireRangeUpgradeLvl++;
-                break;
-        }
     }
 
     protected boolean fireAll(Collection<? extends GameObject> list) {
@@ -173,17 +152,5 @@ public abstract class GameObject {
 
     public void setShooting(boolean shooting) {
         isShooting = shooting;
-    }
-
-    public int getFireRangeUpgradeLvl() {
-        return fireRangeUpgradeLvl;
-    }
-
-    public int getPowerUpgradeLvl() {
-        return powerUpgradeLvl;
-    }
-
-    public int getHealthUpgradeLvl() {
-        return healthUpgradeLvl;
     }
 }
