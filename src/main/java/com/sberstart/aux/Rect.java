@@ -1,4 +1,4 @@
-package utils;
+package com.sberstart.aux;
 
 import java.util.Objects;
 
@@ -43,6 +43,12 @@ public class Rect {
             Point point = (Point) o;
             return Double.compare(point.x, x) == 0 &&
                     Double.compare(point.y, y) == 0;
+        }
+
+        public boolean compareWith(double x, double y) {
+            boolean xCompare = Math.abs(x - this.x) < 0.00001;
+            boolean yCompare = Math.abs(y - this.y) < 0.00001;
+            return (xCompare && yCompare);
         }
 
         @Override

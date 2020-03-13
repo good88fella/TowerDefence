@@ -1,5 +1,7 @@
-import entities.Enemy;
-import entities.Tower;
+package com.sberstart;
+
+import com.sberstart.entities.Enemy;
+import com.sberstart.entities.Tower;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -18,10 +20,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
-import utils.GameObject;
-import utils.Orientation;
-import utils.Rect;
-import utils.Upgrade;
+import com.sberstart.aux.GameObject;
+import com.sberstart.aux.Orientation;
+import com.sberstart.aux.Rect;
+import com.sberstart.aux.Upgrade;
 
 import java.util.*;
 

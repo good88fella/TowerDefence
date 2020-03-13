@@ -1,4 +1,4 @@
-package utils;
+package com.sberstart.aux;
 
 public enum Orientation {
     HORIZONTAL,

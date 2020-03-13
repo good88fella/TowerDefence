@@ -1,6 +1,6 @@
-package entities;
+package com.sberstart.entities;
 
-import utils.Rect;
+import com.sberstart.aux.Rect;
 
 import java.util.ArrayList;
 import java.util.List;

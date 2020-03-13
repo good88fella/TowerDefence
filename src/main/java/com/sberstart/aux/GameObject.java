@@ -1,4 +1,4 @@
-package utils;
+package com.sberstart.aux;
 
 import java.util.*;
 
@@ -15,6 +15,7 @@ public abstract class GameObject {
     protected boolean isAlive;
     protected GameObject target;
     protected boolean isShooting;
+    protected int attackSpeed;
 
     public GameObject(double x, double y, double radius) {
         this.x = x;
@@ -152,5 +153,19 @@ public abstract class GameObject {
 
     public void setShooting(boolean shooting) {
         isShooting = shooting;
+    }
+
+    public int getAttackSpeed() {
+        return attackSpeed;
+    }
+
+    public void setAttackSpeed(int attackSpeed) {
+        this.attackSpeed = attackSpeed;
+    }
+
+    public abstract void resetAttackSpeed();
+
+    public void decAttackSpeed() {
+        this.attackSpeed--;
     }
 }

@@ -1,8 +1,10 @@
-import entities.Enemy;
-import entities.GameMap;
-import entities.Tower;
-import utils.Rect;
-import utils.Upgrade;
+package com.sberstart;
+
+import com.sberstart.entities.Enemy;
+import com.sberstart.entities.GameMap;
+import com.sberstart.entities.Tower;
+import com.sberstart.aux.Rect;
+import com.sberstart.aux.Upgrade;
 
 import java.util.*;
 
@@ -23,7 +25,7 @@ public class Game {
     private int armyHealth;
     private boolean isStarted;
     private int currentCount;
-
+    private int respawn;
 
     public void gameInit() {
         this.gameMap = new GameMap(50, 25);
@@ -47,9 +49,10 @@ public class Game {
     }
 
     public void runGame() throws InterruptedException {
+
         while (!Thread.interrupted()) {
             if (isStarted && !isGameOver) {
-                if (enemies.size() == 0) {
+                if (enemies.size() == 0 && currentCount == 0) {
                     Thread.sleep(5000);
                     waveCounter++;
                     upgradeArmy(waveCounter);
@@ -57,15 +60,18 @@ public class Game {
                     headerRedraw = true;
                 }
                 if (currentCount > 0) {
-                    createEnemy();
-                    currentCount--;
+                    if (respawn == 0) {
+                        createEnemy();
+                        currentCount--;
+                        respawn = (int)(15 - 10 * Math.random());
+                    } else {
+                        respawn--;
+                    }
                 }
-
                 towerAttack();
                 enemyAttack();
                 enemyMove();
-
-                Thread.sleep(200);
+                Thread.sleep(50);
             }
         }
     }
@@ -76,10 +82,15 @@ public class Game {
             while (iterTowers.hasNext() && !isGameOver) {
                 Tower tower = iterTowers.next();
                 if (tower.isAlive()) {
-                    if (tower.fire(enemies)) {
-                        balance += (10 + waveCounter);
-                        killed++;
-                        headerRedraw = true;
+                    if (tower.getAttackSpeed() == 0) {
+                        if (tower.fire(enemies)) {
+                            balance += (10 + waveCounter);
+                            killed++;
+                            headerRedraw = true;
+                        }
+                        tower.resetAttackSpeed();
+                    } else {
+                        tower.decAttackSpeed();
                     }
                 } else {
                     iterTowers.remove();
@@ -95,7 +106,12 @@ public class Game {
             while (iterEnemies.hasNext()) {
                 Enemy enemy = iterEnemies.next();
                 if (enemy.isAlive()) {
-                    enemy.fire(towers);
+                    if (enemy.getAttackSpeed() == 0) {
+                        enemy.fire(towers);
+                        enemy.resetAttackSpeed();
+                    } else {
+                        enemy.decAttackSpeed();
+                    }
                 } else {
                     iterEnemies.remove();
                 }

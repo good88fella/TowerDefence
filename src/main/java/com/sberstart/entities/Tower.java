@@ -1,7 +1,7 @@
-package entities;
+package com.sberstart.entities;
 
-import utils.GameObject;
-import utils.Upgrade;
+import com.sberstart.aux.GameObject;
+import com.sberstart.aux.Upgrade;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +27,13 @@ public class Tower extends GameObject {
         fireRangeUpgradeLvl = 0;
         powerUpgradeLvl = 0;
         healthUpgradeLvl = 0;
+        attackSpeed = 0;
+    }
+
+
+    @Override
+    public void resetAttackSpeed() {
+        attackSpeed = 20;
     }
 
     public void upgrade(Upgrade up) {
