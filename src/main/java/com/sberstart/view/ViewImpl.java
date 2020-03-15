@@ -1,7 +1,13 @@
-package com.sberstart;
+package com.sberstart.view;
 
+import com.sberstart.aux.GameObject;
+import com.sberstart.aux.Orientation;
+import com.sberstart.aux.Rect;
+import com.sberstart.aux.Upgrade;
 import com.sberstart.entities.Enemy;
 import com.sberstart.entities.Tower;
+import com.sberstart.presenter.Presenter;
+import com.sberstart.presenter.PresenterImpl;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -20,14 +26,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
-import com.sberstart.aux.GameObject;
-import com.sberstart.aux.Orientation;
-import com.sberstart.aux.Rect;
-import com.sberstart.aux.Upgrade;
 
 import java.util.*;
 
-public class MainApp extends Application {
+public class ViewImpl extends Application implements View {
+
     private double scale;
     private GraphicsContext gc;
     private GraphicsContext header;
@@ -38,8 +41,8 @@ public class MainApp extends Application {
     private Image explosion;
     private Image road;
     private Image field;
-    private Queue<ExplosionAnimation> explosionAnimations = new LinkedList<>();
-    private List<HealthData> healthDataList = new ArrayList<>();
+    private Queue<ViewImpl.ExplosionAnimation> explosionAnimations = new LinkedList<>();
+    private List<ViewImpl.HealthData> healthDataList = new ArrayList<>();
     private final static int MAX_FRAMES_EXPL = 48;
     private final static int ANIM_SPRITE_ROWS = 6;
     private final static int ANIM_SPRITE_COLS = 8;
@@ -47,10 +50,9 @@ public class MainApp extends Application {
     private final static int ANIM_FRAME_HEIGHT = 256;
     private final static int NANOSEC_PER_FRAME = 20_000;
     private final static double HEADER_HEIGHT = 68;
-    private static Thread thread;
     private Tower selected;
-    private boolean redrawTowerInfo;
-    private static Game game;
+    private Presenter presenter;
+    private long time;
 
     private static class HealthData {
         private double x;
@@ -78,15 +80,19 @@ public class MainApp extends Application {
         }
     }
 
+    public ViewImpl(Presenter presenter) {
+        this.presenter = presenter;
+    }
+
     @Override
     public void stop() {
-        thread.interrupt();
+        presenter.onExit();
     }
 
     private void redrawAll() {
-        redrawTowerInfo = true;
-        game.setNeedRedraw(true);
-        game.setHeaderRedraw(true);
+        refreshHeader();
+        refreshView();
+        refreshTowerInfo(selected);
     }
 
     Button createUpgradeButton(double width, EventHandler<ActionEvent> value) {
@@ -99,23 +105,13 @@ public class MainApp extends Application {
     }
 
     private void startStopHandle() {
-        if (!game.isStarted()) {
-            game.setStarted(true);
-            game.setGameOver(false);
-            startPause.setText("Pause");
-            redrawAll();
+        if (!presenter.startGame()) {
+            presenter.pauseGame();
+            startPause.setText("Start");
         } else {
-            if (game.isGameOver()) {
-                game.gameInit();
-                game.setGameOver(false);
-                redrawAll();
-                startPause.setText("Pause");
-            } else {
-                game.setStarted(false);
-                redrawAll();
-                startPause.setText("Start");
-            }
+            startPause.setText("Pause");
         }
+
     }
 
     HBox createHeader(double width) {
@@ -161,24 +157,15 @@ public class MainApp extends Application {
         gcTowerInfo.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
         buttonsTower = new VBox(2);
         Button button1 = createUpgradeButton(width, event -> {
-            if (game.upgradeTower(selected, Upgrade.RANGE)) {
-                redrawTowerInfo = true;
-                game.setHeaderRedraw(true);
-            }
+            presenter.upgradeTower(selected, Upgrade.RANGE);
         });
         buttonsTower.getChildren().add(button1);
         Button button2 = createUpgradeButton(width, event -> {
-            if (game.upgradeTower(selected, Upgrade.POWER)) {
-                redrawTowerInfo = true;
-                game.setHeaderRedraw(true);
-            }
+            presenter.upgradeTower(selected, Upgrade.POWER);
         });
         buttonsTower.getChildren().add(button2);
         Button button3 = createUpgradeButton(width, event -> {
-            if (game.upgradeTower(selected, Upgrade.ARMOR)) {
-                redrawTowerInfo = true;
-                game.setHeaderRedraw(true);
-            }
+            presenter.upgradeTower(selected, Upgrade.ARMOR);
         });
         buttonsTower.getChildren().add(button3);
         AnchorPane.setRightAnchor(buttonsTower, 5.0);
@@ -202,23 +189,22 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        double width = game.getGameMap().getWidth();
-        double height = game.getGameMap().getHeight();
+        double width = presenter.getGameMap().getWidth();
+        double height = presenter.getGameMap().getHeight();
         this.scale = Math.min(1500.0 / width, 1500.0 / height);
-        redrawTowerInfo = true;
+        refreshTowerInfo(selected);
         Canvas canvas = new Canvas(width * scale, height * scale);
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                selected = game.getTowerOnClick((int)(event.getX() / scale), (int)(event.getY() / scale));
-                redrawTowerInfo = true;
+                selected = presenter.selectTower((int)(event.getX() / scale), (int)(event.getY() / scale));
             } else if (event.getButton() == MouseButton.SECONDARY) {
-                game.destroyTower((int)(event.getX() / scale), (int)(event.getY() / scale));
+                presenter.destroyTower((int)(event.getX() / scale), (int)(event.getY() / scale));
             }
         });
         VBox vBox = new VBox();
         HBox hBox = createHeader(width * scale);
-        
+
         vBox.getChildren().add(hBox);
         vBox.getChildren().add(canvas);
 
@@ -256,7 +242,7 @@ public class MainApp extends Application {
     private void addToExploseAnim(GameObject obj, double x, double y, double barrelLength, long now) {
         double angleRad = Math.toRadians(obj.getAngle() + 180);
         if (obj.isShooting()) {
-            explosionAnimations.add(new ExplosionAnimation(x + scale / 2 + barrelLength * Math.cos(angleRad),
+            explosionAnimations.add(new ViewImpl.ExplosionAnimation(x + scale / 2 + barrelLength * Math.cos(angleRad),
                     y + scale / 2 + barrelLength * Math.sin(angleRad), now));
             obj.setShooting(false);
         }
@@ -273,7 +259,7 @@ public class MainApp extends Application {
         double barrelLength = scale * 0.8;
         drawBarrel(startX, startY, barrelLength, tower.getAngle());
         double percentage = (double)tower.getCurrentHealth() / tower.getMaxHealth();
-        healthDataList.add(new HealthData(startX, startY - 6, percentage));
+        healthDataList.add(new ViewImpl.HealthData(startX, startY - 6, percentage));
         addToExploseAnim(tower, startX, startY, barrelLength, now);
     }
 
@@ -317,25 +303,25 @@ public class MainApp extends Application {
         }
         double barrelLength = scale * 0.7;
         drawBarrel(startX, startY, barrelLength, enemy.getAngle());
-        healthDataList.add(new HealthData(startX, startY - 6, (double)enemy.getCurrentHealth() / enemy.getMaxHealth()));
+        healthDataList.add(new ViewImpl.HealthData(startX, startY - 6, (double)enemy.getCurrentHealth() / enemy.getMaxHealth()));
         addToExploseAnim(enemy, startX, startY, barrelLength, now);
     }
 
     private void drawField(long now) {
         gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
-        char[][] matrix = game.getGameMap().getMatrix();
+        char[][] matrix = presenter.getGameMap().getMatrix();
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++) {
                 gc.drawImage(matrix[i][j] == '#' ? road : field, 0, 0, 200, 200, j * scale, i * scale, scale, scale);
             }
         }
-        for (Tower tower : game.getTowers()) {
+        for (Tower tower : presenter.getTowers()) {
             drawTower(tower, now);
         }
-        for (Enemy enemy : game.getEnemies()) {
+        for (Enemy enemy : presenter.getEnemies()) {
             drawEnemy(enemy, now);
         }
-        for (HealthData healthData : healthDataList) {
+        for (ViewImpl.HealthData healthData : healthDataList) {
             drawHealth(healthData.x, healthData.y, healthData.percentage);
         }
         healthDataList.clear();
@@ -367,82 +353,82 @@ public class MainApp extends Application {
         gc.setFill(Color.WHITE);
     }
 
+    @Override
+    public void refreshView() {
+        drawField(time);
+        if (presenter.isGameOver()) {
+            drawGameOver();
+            startPause.setText("Start");
+        }
+    }
+
+    @Override
+    public void refreshHeader() {
+        header.setFont(Font.font("Herculanum", 20));
+        fillGc(header);
+        header.fillText(String.format("Level: %d", presenter.getWaveCounter()), 5, 22);
+        header.fillText(String.format("Lives: %d", presenter.getLives()), 5, 48);
+        header.fillText(String.format("Gold: %d", presenter.getBalance()), 170, 22);
+        header.fillText(String.format("Killed: %d", presenter.getKilled()), 170, 48);
+
+        gcArmyInfo.setFont(Font.font("Herculanum", 15));
+        fillGc(gcArmyInfo);
+        gcArmyInfo.fillText(String.format("Range: %d", presenter.getArmyRange()), 5, 16);
+        gcArmyInfo.fillText(String.format("Power: %d", presenter.getArmyPower()), 5, 36);
+        gcArmyInfo.fillText(String.format("Max armory: %d", presenter.getArmyHealth()), 5, 55);
+    }
+
+    @Override
+    public void refreshTowerInfo(Tower tower) {
+        gcTowerInfo.setFont(Font.font("Herculanum", 15));
+        fillGc(gcTowerInfo);
+        if (tower != null) {
+            buttonsTower.setVisible(true);
+            ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + tower.getFireRangeUpgradeCost());
+            ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + tower.getPowerUpgradeCost());
+            ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + tower.getHealthUpgradeCost());
+            gcTowerInfo.fillText(String.format("Range: %d", tower.getFireRange()), 5, 16);
+            gcTowerInfo.fillText(String.format("Power: %d", tower.getPower()), 5, 36);
+            gcTowerInfo.fillText(String.format("Armory: %d/%d", tower.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
+            gcTowerInfo.fillText(String.format("lvl: %d", tower.getFireRangeUpgradeLvl()), 120, 16);
+            gcTowerInfo.fillText(String.format("lvl: %d", tower.getPowerUpgradeLvl()), 120, 36);
+            gcTowerInfo.fillText(String.format("lvl: %d", tower.getHealthUpgradeLvl()), 120, 55);
+        } else {
+            buttonsTower.setVisible(false);
+        }
+    }
+
     protected AnimationTimer at = new AnimationTimer(){
         @Override
         public void handle(long now) {
-            if (game.isNeedRedraw()) {
-                drawField(now);
-                game.setNeedRedraw(false);
-                Iterator<ExplosionAnimation> iterExplAnim = explosionAnimations.iterator();
-                while (iterExplAnim.hasNext()) {
-                    ExplosionAnimation explAnim = iterExplAnim.next();
-                    if (explAnim.stage >= MAX_FRAMES_EXPL) {
-                        iterExplAnim.remove();
-                        game.setNeedRedraw(true);
-                    }
-                    else {
-                        if (now - explAnim.now >= NANOSEC_PER_FRAME) {
-                            int startX = explAnim.stage % ANIM_SPRITE_COLS;
-                            int startY = explAnim.stage / ANIM_SPRITE_COLS;
-                            gc.drawImage(explosion, startX * ANIM_FRAME_WIDTH,
-                                    startY * ANIM_FRAME_HEIGHT, ANIM_FRAME_WIDTH, ANIM_FRAME_HEIGHT,
-                                    explAnim.x - scale /2 , explAnim.y - scale /2 , scale, scale);
-                            explAnim.now = now;
-                            explAnim.stage++;
-                            game.setNeedRedraw(true);
-                        }
+            time = now;
+            Iterator<ViewImpl.ExplosionAnimation> iterExplAnim = explosionAnimations.iterator();
+            while (iterExplAnim.hasNext()) {
+                ViewImpl.ExplosionAnimation explAnim = iterExplAnim.next();
+                if (explAnim.stage >= MAX_FRAMES_EXPL) {
+                    iterExplAnim.remove();
+                    refreshView();
+                }
+                else {
+                    if (now - explAnim.now >= NANOSEC_PER_FRAME) {
+                        int startX = explAnim.stage % ANIM_SPRITE_COLS;
+                        int startY = explAnim.stage / ANIM_SPRITE_COLS;
+                        gc.drawImage(explosion, startX * ANIM_FRAME_WIDTH,
+                                startY * ANIM_FRAME_HEIGHT, ANIM_FRAME_WIDTH, ANIM_FRAME_HEIGHT,
+                                explAnim.x - scale / 2 , explAnim.y - scale / 2 , scale, scale);
+                        explAnim.now = now;
+                        explAnim.stage++;
+                        refreshView();
                     }
                 }
-                if (game.isGameOver()) {
-                    drawGameOver();
-                    startPause.setText("Start");
-                }
-            }
-            if (game.isHeaderRedraw()) {
-                header.setFont(Font.font("Herculanum", 20));
-                fillGc(header);
-                header.fillText(String.format("Level: %d", game.getWaveCounter()), 5, 22);
-                header.fillText(String.format("Lives: %d", game.getLives()), 5, 48);
-                header.fillText(String.format("Gold: %d", game.getBalance()), 170, 22);
-                header.fillText(String.format("Killed: %d", game.getKilled()), 170, 48);
-
-                gcArmyInfo.setFont(Font.font("Herculanum", 15));
-                fillGc(gcArmyInfo);
-                gcArmyInfo.fillText(String.format("Range: %d", game.getArmyRange()), 5, 16);
-                gcArmyInfo.fillText(String.format("Power: %d", game.getArmyPower()), 5, 36);
-                gcArmyInfo.fillText(String.format("Max armory: %d", game.getArmyHealth()), 5, 55);
-                game.setHeaderRedraw(false);
-            }
-            if (redrawTowerInfo) {
-                gcTowerInfo.setFont(Font.font("Herculanum", 15));
-                fillGc(gcTowerInfo);
-                if (selected != null) {
-                    buttonsTower.setVisible(true);
-                    ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + selected.getFireRangeUpgradeCost());
-                    ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + selected.getPowerUpgradeCost());
-                    ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + selected.getHealthUpgradeCost());
-                    gcTowerInfo.fillText(String.format("Range: %d", selected.getFireRange()), 5, 16);
-                    gcTowerInfo.fillText(String.format("Power: %d", selected.getPower()), 5, 36);
-                    gcTowerInfo.fillText(String.format("Armory: %d/%d", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
-                    gcTowerInfo.fillText(String.format("lvl: %d", selected.getFireRangeUpgradeLvl()), 120, 16);
-                    gcTowerInfo.fillText(String.format("lvl: %d", selected.getPowerUpgradeLvl()), 120, 36);
-                    gcTowerInfo.fillText(String.format("lvl: %d", selected.getHealthUpgradeLvl()), 120, 55);
-                } else {
-                    buttonsTower.setVisible(false);
-                }
-                redrawTowerInfo = false;
             }
         }
     };
 
     public static void main(String[] args) {
-        game = new Game();
-        thread = new Thread(() -> {
-            try {
-                game.runGame();
-            } catch (InterruptedException ignored) {   }
-        });
-        thread.start();
+        PresenterImpl presenter = new PresenterImpl();
+        ViewImpl view = new ViewImpl(presenter);
+        presenter.setView(view);
         launch();
     }
 }

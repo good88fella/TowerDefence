@@ -13,7 +13,7 @@ public abstract class GameObject {
     protected int currentHealth;
     protected double angle;
     protected boolean isAlive;
-    protected GameObject target;
+    private GameObject target;
     protected boolean isShooting;
     protected int attackSpeed;
 

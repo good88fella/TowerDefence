@@ -53,10 +53,6 @@ public class GameMap {
         this.start = start;
     }
 
-    public Rect.Point getFinish() {
-        return finish;
-    }
-
     public void setFinish(Rect.Point finish) {
         this.finish = finish;
     }
@@ -65,31 +61,16 @@ public class GameMap {
         return width;
     }
 
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
     public int getHeight() {
         return height;
-    }
-
-    public void setHeight(int height) {
-        this.height = height;
     }
 
     public char[][] getMatrix() {
         return matrix;
     }
 
-    public void setMatrix(char[][] matrix) {
-        this.matrix = matrix;
-    }
-
     public List<Rect> getFieldsCoordinates() {
         return fieldsCoordinates;
     }
 
-    public void setFieldsCoordinates(List<Rect> fieldsCoordinates) {
-        this.fieldsCoordinates = fieldsCoordinates;
-    }
 }

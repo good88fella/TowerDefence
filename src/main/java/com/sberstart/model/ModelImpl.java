@@ -1,82 +1,38 @@
-package com.sberstart;
+package com.sberstart.model;
 
+import com.sberstart.aux.Rect;
+import com.sberstart.aux.Upgrade;
 import com.sberstart.entities.Enemy;
 import com.sberstart.entities.GameMap;
 import com.sberstart.entities.Tower;
-import com.sberstart.aux.Rect;
-import com.sberstart.aux.Upgrade;
 
 import java.util.*;
 
-public class Game {
-
+public class ModelImpl implements Model {
     private GameMap gameMap;
-    private volatile boolean needRedraw;
-    private volatile boolean headerRedraw;
     private List<Enemy> enemies = Collections.synchronizedList(new ArrayList<>());
     private Set<Tower> towers = Collections.synchronizedSet(new HashSet<>());
     private volatile boolean isGameOver = false;
     private int balance;
-    private int waveCounter;
     private int lives;
     private int killed;
     private int armyRange;
     private int armyPower;
     private int armyHealth;
-    private volatile boolean isStarted;
-    private int currentCount;
-    private int respawn;
+    private int waveCounter;
 
-    public void gameInit() {
-        this.gameMap = new GameMap(50, 25);
-        this.gameMap.fillMap();
-        this.gameMap.setStart(new Rect.Point(0, 1));
-        this.gameMap.setFinish(new Rect.Point(49, 1));
-        enemies.clear();
-        towers.clear();
-        balance = 30;
-        waveCounter = 0;
-        lives = 1;
-        killed = 0;
-        armyRange = 3;
-        armyPower = 1;
-        armyHealth = 10;
-        currentCount = 0;
+    @Override
+    public boolean isGameOver() {
+        return isGameOver;
     }
 
-    public Game() {
-        gameInit();
+    @Override
+    public void setGameOver(boolean gameOver) {
+        isGameOver = gameOver;
     }
 
-    public void runGame() throws InterruptedException {
-
-        while (!Thread.interrupted()) {
-            if (isStarted && !isGameOver) {
-                if (enemies.size() == 0 && currentCount == 0) {
-                    Thread.sleep(5000);
-                    waveCounter++;
-                    upgradeArmy(waveCounter);
-                    currentCount = waveCounter;
-                    headerRedraw = true;
-                }
-                if (currentCount > 0) {
-                    if (respawn == 0) {
-                        createEnemy();
-                        currentCount--;
-                        respawn = (int)(15 - 10 * Math.random());
-                    } else {
-                        respawn--;
-                    }
-                }
-                towerAttack();
-                enemyAttack();
-                enemyMove();
-                Thread.sleep(50);
-            }
-        }
-    }
-
-    private void towerAttack() {
+    @Override
+    public void towerAttack() {
         synchronized (towers) {
             Iterator<Tower> iterTowers = towers.iterator();
             while (iterTowers.hasNext() && !isGameOver) {
@@ -86,7 +42,6 @@ public class Game {
                         if (tower.fire(enemies)) {
                             balance += (10 + waveCounter);
                             killed++;
-                            headerRedraw = true;
                         }
                         tower.resetAttackSpeed();
                     } else {
@@ -95,12 +50,12 @@ public class Game {
                 } else {
                     iterTowers.remove();
                 }
-                needRedraw = true;
             }
         }
     }
 
-    private void enemyAttack() {
+    @Override
+    public void enemyAttack() {
         synchronized (enemies) {
             Iterator<Enemy> iterEnemies = enemies.iterator();
             while (iterEnemies.hasNext()) {
@@ -115,12 +70,12 @@ public class Game {
                 } else {
                     iterEnemies.remove();
                 }
-                needRedraw = true;
             }
         }
     }
 
-    private void enemyMove() {
+    @Override
+    public void enemyMove() {
         synchronized (enemies) {
             Iterator<Enemy> iterEnemies = enemies.iterator();
             while (iterEnemies.hasNext()) {
@@ -129,46 +84,47 @@ public class Game {
                     boolean ifFinished = enemy.move(gameMap);
                     if (ifFinished) {
                         lives--;
-                        headerRedraw = true;
                     }
                 } else {
                     iterEnemies.remove();
                 }
                 if (lives <= 0) {
                     isGameOver = true;
-                    headerRedraw = true;
                 }
-                needRedraw = true;
             }
         }
     }
 
-    public boolean isGameOver() {
-        return isGameOver;
-    }
-
+    @Override
     public GameMap getGameMap() {
         return gameMap;
     }
 
-    public Tower getTowerOnClick(double x, double y) {
-        if (towers.contains(new Tower(x, y))) {
-            for (Tower tower : towers) {
-                if (tower.getX() == x && tower.getY() == y)
-                    return tower;
-            }
-        }
-        createTower(x, y);
-        return null;
+    @Override
+    public void initModel() {
+        gameMap = new GameMap(50, 25);
+        gameMap.fillMap();
+        gameMap.setStart(new Rect.Point(0, 1));
+        gameMap.setFinish(new Rect.Point(49, 1));
+        enemies.clear();
+        towers.clear();
+        balance = 30;
+        lives = 1;
+        killed = 0;
+        armyRange = 3;
+        armyPower = 1;
+        armyHealth = 10;
+        waveCounter = 0;
     }
 
-    public void createTower(double x, double y) {
+    @Override
+    public boolean createTower(double x, double y) {
         if (balance - 10 >= 0 && isAvailableField(x, y) && !isGameOver) {
             towers.add(new Tower(x, y));
             balance -= 10;
-            headerRedraw = true;
+            return true;
         }
-        setNeedRedraw(true);
+        return false;
     }
 
     private boolean isAvailableField(double x, double y) {
@@ -189,16 +145,14 @@ public class Game {
         return isAvailable;
     }
 
-    public boolean upgradeTower(Tower tower, Upgrade up) {
-        if (!towers.contains(tower) || tower == null)
-            return false;
+    @Override
+    public void upgradeTower(Tower tower, Upgrade up) {
         switch (up) {
             case RANGE:
                 if (balance >= tower.getFireRangeUpgradeCost()) {
                     balance -= tower.getFireRangeUpgradeCost();
                     tower.upgrade(Upgrade.RANGE);
                     tower.setFireRangeUpgradeCost(tower.getFireRangeUpgradeCost() + 40 * tower.getFireRangeUpgradeLvl());
-                    return true;
                 }
                 break;
             case POWER:
@@ -206,7 +160,6 @@ public class Game {
                     balance -= tower.getPowerUpgradeCost();
                     tower.upgrade(Upgrade.POWER);
                     tower.setPowerUpgradeCost(tower.getPowerUpgradeCost() + 10 * tower.getPowerUpgradeLvl());
-                    return true;
                 }
                 break;
             case ARMOR:
@@ -214,26 +167,37 @@ public class Game {
                     balance -= tower.getHealthUpgradeCost();
                     tower.upgrade(Upgrade.ARMOR);
                     tower.setHealthUpgradeCost(tower.getHealthUpgradeCost() + 5 * tower.getHealthUpgradeLvl());
-                    return true;
                 }
                 break;
         }
-        return false;
     }
 
-    public boolean destroyTower(double x, double y) {
-        if (towers.remove(new Tower(x, y))) {
-            needRedraw = true;
-            return true;
+
+
+    @Override
+    public Tower getTowerByCoord(double x, double y) {
+        if (towers.contains(new Tower(x, y))) {
+            for (Tower tower : towers) {
+                if (tower.getX() == x && tower.getY() == y)
+                    return tower;
+            }
         }
-        return false;
+        return null;
     }
 
+    @Override
+    public boolean destroyTower(Tower tower) {
+        return towers.remove(tower);
+    }
+
+    @Override
     public void createEnemy() {
         enemies.add(new Enemy(gameMap.getStart().getX(), gameMap.getStart().getY(), armyRange, armyPower, armyHealth));
     }
 
-    public void upgradeArmy(int waveCounter) {
+
+    @Override
+    public void upgradeArmy() {
         if (waveCounter % 15 == 0) {
             armyRange += 1;
         } else if (waveCounter % 5 == 0) {
@@ -242,87 +206,53 @@ public class Game {
         }
     }
 
-    public void restore() {
-
-    }
-
-    public boolean isNeedRedraw() {
-        return needRedraw;
-    }
-
-    public void setNeedRedraw(boolean needRedraw) {
-        this.needRedraw = needRedraw;
-    }
-
-    public Set<Tower> getTowers() {
+    @Override
+    public Collection<Tower> getTowers() {
         return towers;
     }
 
-    public List<Enemy> getEnemies() {
+    @Override
+    public Collection<Enemy> getEnemies() {
         return enemies;
     }
 
-    public int getBalance() {
-        return balance;
+    @Override
+    public void incWaveCounter() {
+        waveCounter++;
     }
 
+    @Override
     public int getWaveCounter() {
         return waveCounter;
     }
 
+    @Override
     public int getLives() {
         return lives;
     }
 
-    public void setGameOver(boolean gameOver) {
-        isGameOver = gameOver;
+    @Override
+    public int getBalance() {
+        return balance;
     }
 
-    public void setBalance(int balance) {
-        this.balance = balance;
-    }
-
-    public void setWaveCounter(int waveCounter) {
-        this.waveCounter = waveCounter;
-    }
-
-    public void setLives(int lives) {
-        this.lives = lives;
-    }
-
-    public void setGameMap(GameMap gameMap) {
-        this.gameMap = gameMap;
-    }
-
-    public boolean isHeaderRedraw() {
-        return headerRedraw;
-    }
-
-    public void setHeaderRedraw(boolean headerRedraw) {
-        this.headerRedraw = headerRedraw;
-    }
-
+    @Override
     public int getKilled() {
         return killed;
     }
 
-    public int getArmyRange() {
-        return armyRange;
-    }
-
+    @Override
     public int getArmyPower() {
         return armyPower;
     }
 
+    @Override
+    public int getArmyRange() {
+        return armyRange;
+    }
+
+    @Override
     public int getArmyHealth() {
         return armyHealth;
-    }
-
-    public boolean isStarted() {
-        return isStarted;
-    }
-
-    public void setStarted(boolean started) {
-        isStarted = started;
     }
 }
