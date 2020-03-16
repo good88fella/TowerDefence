@@ -52,7 +52,11 @@ public class ViewImpl extends Application implements View {
     private final static double HEADER_HEIGHT = 68;
     private Tower selected;
     private Presenter presenter;
-    private long time;
+
+    private boolean refreshHeader;
+    private boolean refreshView;
+    private boolean refreshTowerInfo;
+
 
     public ViewImpl() {
     }
@@ -79,7 +83,7 @@ public class ViewImpl extends Application implements View {
     private void redrawAll() {
         refreshHeader();
         refreshView();
-        refreshTowerInfo(selected);
+        refreshTowerInfo();
     }
 
     Button createUpgradeButton(double width, EventHandler<ActionEvent> value) {
@@ -179,7 +183,7 @@ public class ViewImpl extends Application implements View {
         double width = presenter.getGameMap().getWidth();
         double height = presenter.getGameMap().getHeight();
         this.scale = Math.min(1500.0 / width, 1500.0 / height);
-        refreshTowerInfo(selected);
+        refreshTowerInfo();
         Canvas canvas = new Canvas(width * scale, height * scale);
         gc = canvas.getGraphicsContext2D();
         canvas.setOnMousePressed(event -> {
@@ -334,6 +338,10 @@ public class ViewImpl extends Application implements View {
 
     @Override
     public void refreshView() {
+        refreshView = true;
+    }
+
+    private void updateView(long time) {
         drawField(time);
         if (presenter.isGameOver()) {
             drawGameOver();
@@ -343,6 +351,10 @@ public class ViewImpl extends Application implements View {
 
     @Override
     public void refreshHeader() {
+        refreshHeader = true;
+    }
+
+    private void updateHeader() {
         header.setFont(Font.font("Herculanum", 20));
         fillGc(header);
         header.fillText(String.format("Level: %d", presenter.getWaveCounter()), 5, 22);
@@ -358,32 +370,36 @@ public class ViewImpl extends Application implements View {
     }
 
     @Override
-    public void refreshTowerInfo(Tower tower) {
-        if (gcTowerInfo != null) {
-            gcTowerInfo.setFont(Font.font("Herculanum", 15));
-            fillGc(gcTowerInfo);
-            if (tower != null) {
-                buttonsTower.setVisible(true);
-                ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + tower.getFireRangeUpgradeCost());
-                ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + tower.getPowerUpgradeCost());
-                ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + tower.getHealthUpgradeCost());
-                gcTowerInfo.fillText(String.format("Range: %d", tower.getFireRange()), 5, 16);
-                gcTowerInfo.fillText(String.format("Power: %d", tower.getPower()), 5, 36);
-                gcTowerInfo.fillText(String.format("Armory: %d/%d", tower.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
-                gcTowerInfo.fillText(String.format("lvl: %d", tower.getFireRangeUpgradeLvl()), 120, 16);
-                gcTowerInfo.fillText(String.format("lvl: %d", tower.getPowerUpgradeLvl()), 120, 36);
-                gcTowerInfo.fillText(String.format("lvl: %d", tower.getHealthUpgradeLvl()), 120, 55);
-            } else {
-                buttonsTower.setVisible(false);
-            }
+    public void refreshTowerInfo() {
+        refreshTowerInfo = true;
+    }
 
+    private void updateTowerInfo() {
+        gcTowerInfo.setFont(Font.font("Herculanum", 15));
+        fillGc(gcTowerInfo);
+        if (selected != null) {
+            buttonsTower.setVisible(true);
+            ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + selected.getFireRangeUpgradeCost());
+            ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + selected.getPowerUpgradeCost());
+            ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + selected.getHealthUpgradeCost());
+            gcTowerInfo.fillText(String.format("Range: %d", selected.getFireRange()), 5, 16);
+            gcTowerInfo.fillText(String.format("Power: %d", selected.getPower()), 5, 36);
+            gcTowerInfo.fillText(String.format("Armory: %d/%d", selected.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
+            gcTowerInfo.fillText(String.format("lvl: %d", selected.getFireRangeUpgradeLvl()), 120, 16);
+            gcTowerInfo.fillText(String.format("lvl: %d", selected.getPowerUpgradeLvl()), 120, 36);
+            gcTowerInfo.fillText(String.format("lvl: %d", selected.getHealthUpgradeLvl()), 120, 55);
+        } else {
+            buttonsTower.setVisible(false);
         }
     }
 
     protected AnimationTimer at = new AnimationTimer(){
         @Override
         public void handle(long now) {
-            time = now;
+            if (refreshView) {
+                updateView(now);
+                refreshView = false;
+            }
             Iterator<ViewImpl.ExplosionAnimation> iterExplAnim = explosionAnimations.iterator();
             while (iterExplAnim.hasNext()) {
                 ViewImpl.ExplosionAnimation explAnim = iterExplAnim.next();
@@ -403,6 +419,14 @@ public class ViewImpl extends Application implements View {
                         explAnim.stage++;
                     }
                 }
+            }
+            if (refreshHeader) {
+                updateHeader();
+                refreshHeader = false;
+            }
+            if (refreshTowerInfo) {
+                updateTowerInfo();
+                refreshTowerInfo = false;
             }
         }
     };

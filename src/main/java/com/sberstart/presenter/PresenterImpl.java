@@ -80,7 +80,7 @@ public class PresenterImpl implements Presenter{
             model.setGameOver(false);
             view.refreshHeader();
             view.refreshView();
-            view.refreshTowerInfo(null);
+            view.refreshTowerInfo();
             return (true);
         }
         return false;
@@ -92,7 +92,7 @@ public class PresenterImpl implements Presenter{
             isStarted = false;
             view.refreshHeader();
             view.refreshView();
-            view.refreshTowerInfo(null);
+            view.refreshTowerInfo();
         }
     }
 
@@ -100,7 +100,7 @@ public class PresenterImpl implements Presenter{
     public void upgradeTower(Tower tower, Upgrade upgrade) {
         if (tower != null && model.getTowers().contains(tower)) {
             model.upgradeTower(tower, upgrade);
-            view.refreshTowerInfo(tower);
+            view.refreshTowerInfo();
             view.refreshView();
         }
     }
