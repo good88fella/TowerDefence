@@ -52,7 +52,6 @@ public class PresenterImpl implements Presenter{
                     model.incWaveCounter();
                     model.upgradeArmy();
                     currentCount = model.getWaveCounter();
-                    view.refreshHeader();
                 }
                 if (currentCount > 0) {
                     if (respawn == 0) {

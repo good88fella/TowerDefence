@@ -28,6 +28,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class ViewImpl extends Application implements View {
 
@@ -42,7 +43,6 @@ public class ViewImpl extends Application implements View {
     private Image road;
     private Image field;
     private Queue<ViewImpl.ExplosionAnimation> explosionAnimations = new LinkedList<>();
-    private List<ViewImpl.HealthData> healthDataList = new ArrayList<>();
     private final static int MAX_FRAMES_EXPL = 48;
     private final static int ANIM_SPRITE_ROWS = 6;
     private final static int ANIM_SPRITE_COLS = 8;
@@ -54,16 +54,7 @@ public class ViewImpl extends Application implements View {
     private Presenter presenter;
     private long time;
 
-    private static class HealthData {
-        private double x;
-        private double y;
-        private double percentage;
-
-        public HealthData(double x, double y, double percentage) {
-            this.x = x;
-            this.y = y;
-            this.percentage = percentage;
-        }
+    public ViewImpl() {
     }
 
     private static class ExplosionAnimation {
@@ -78,10 +69,6 @@ public class ViewImpl extends Application implements View {
             this.now = now;
             this.stage = 0;
         }
-    }
-
-    public ViewImpl(Presenter presenter) {
-        this.presenter = presenter;
     }
 
     @Override
@@ -258,8 +245,6 @@ public class ViewImpl extends Application implements View {
         gc.fillOval(startX + (scale - r) / 2 , startY + (scale - r) / 2, r, r);
         double barrelLength = scale * 0.8;
         drawBarrel(startX, startY, barrelLength, tower.getAngle());
-        double percentage = (double)tower.getCurrentHealth() / tower.getMaxHealth();
-        healthDataList.add(new ViewImpl.HealthData(startX, startY - 6, percentage));
         addToExploseAnim(tower, startX, startY, barrelLength, now);
     }
 
@@ -303,7 +288,6 @@ public class ViewImpl extends Application implements View {
         }
         double barrelLength = scale * 0.7;
         drawBarrel(startX, startY, barrelLength, enemy.getAngle());
-        healthDataList.add(new ViewImpl.HealthData(startX, startY - 6, (double)enemy.getCurrentHealth() / enemy.getMaxHealth()));
         addToExploseAnim(enemy, startX, startY, barrelLength, now);
     }
 
@@ -315,16 +299,11 @@ public class ViewImpl extends Application implements View {
                 gc.drawImage(matrix[i][j] == '#' ? road : field, 0, 0, 200, 200, j * scale, i * scale, scale, scale);
             }
         }
-        for (Tower tower : presenter.getTowers()) {
-            drawTower(tower, now);
-        }
-        for (Enemy enemy : presenter.getEnemies()) {
-            drawEnemy(enemy, now);
-        }
-        for (ViewImpl.HealthData healthData : healthDataList) {
-            drawHealth(healthData.x, healthData.y, healthData.percentage);
-        }
-        healthDataList.clear();
+        presenter.getTowers().forEach(p -> drawTower(p, now));
+        presenter.getEnemies().forEach(p -> drawEnemy(p, now));
+        Stream.of(presenter.getEnemies(), presenter.getTowers())
+                .flatMap(Collection::stream)
+                .forEach(p -> drawHealth(p.getX() * scale, p.getY() * scale - 6, (double)p.getCurrentHealth() / p.getMaxHealth()));
     }
 
     private void drawGameOver() {
@@ -380,21 +359,24 @@ public class ViewImpl extends Application implements View {
 
     @Override
     public void refreshTowerInfo(Tower tower) {
-        gcTowerInfo.setFont(Font.font("Herculanum", 15));
-        fillGc(gcTowerInfo);
-        if (tower != null) {
-            buttonsTower.setVisible(true);
-            ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + tower.getFireRangeUpgradeCost());
-            ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + tower.getPowerUpgradeCost());
-            ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + tower.getHealthUpgradeCost());
-            gcTowerInfo.fillText(String.format("Range: %d", tower.getFireRange()), 5, 16);
-            gcTowerInfo.fillText(String.format("Power: %d", tower.getPower()), 5, 36);
-            gcTowerInfo.fillText(String.format("Armory: %d/%d", tower.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
-            gcTowerInfo.fillText(String.format("lvl: %d", tower.getFireRangeUpgradeLvl()), 120, 16);
-            gcTowerInfo.fillText(String.format("lvl: %d", tower.getPowerUpgradeLvl()), 120, 36);
-            gcTowerInfo.fillText(String.format("lvl: %d", tower.getHealthUpgradeLvl()), 120, 55);
-        } else {
-            buttonsTower.setVisible(false);
+        if (gcTowerInfo != null) {
+            gcTowerInfo.setFont(Font.font("Herculanum", 15));
+            fillGc(gcTowerInfo);
+            if (tower != null) {
+                buttonsTower.setVisible(true);
+                ((Button)buttonsTower.getChildren().get(0)).setText("\u2191 " + tower.getFireRangeUpgradeCost());
+                ((Button)buttonsTower.getChildren().get(1)).setText("\u2191 " + tower.getPowerUpgradeCost());
+                ((Button)buttonsTower.getChildren().get(2)).setText("\u2191 " + tower.getHealthUpgradeCost());
+                gcTowerInfo.fillText(String.format("Range: %d", tower.getFireRange()), 5, 16);
+                gcTowerInfo.fillText(String.format("Power: %d", tower.getPower()), 5, 36);
+                gcTowerInfo.fillText(String.format("Armory: %d/%d", tower.getCurrentHealth(), selected.getMaxHealth()), 5, 55);
+                gcTowerInfo.fillText(String.format("lvl: %d", tower.getFireRangeUpgradeLvl()), 120, 16);
+                gcTowerInfo.fillText(String.format("lvl: %d", tower.getPowerUpgradeLvl()), 120, 36);
+                gcTowerInfo.fillText(String.format("lvl: %d", tower.getHealthUpgradeLvl()), 120, 55);
+            } else {
+                buttonsTower.setVisible(false);
+            }
+
         }
     }
 
@@ -411,6 +393,7 @@ public class ViewImpl extends Application implements View {
                 }
                 else {
                     if (now - explAnim.now >= NANOSEC_PER_FRAME) {
+                        refreshView();
                         int startX = explAnim.stage % ANIM_SPRITE_COLS;
                         int startY = explAnim.stage / ANIM_SPRITE_COLS;
                         gc.drawImage(explosion, startX * ANIM_FRAME_WIDTH,
@@ -418,17 +401,19 @@ public class ViewImpl extends Application implements View {
                                 explAnim.x - scale / 2 , explAnim.y - scale / 2 , scale, scale);
                         explAnim.now = now;
                         explAnim.stage++;
-                        refreshView();
                     }
                 }
             }
         }
     };
 
+    @Override
+    public void init() {
+        presenter = new PresenterImpl();
+        presenter.setView(this);
+    }
+
     public static void main(String[] args) {
-        PresenterImpl presenter = new PresenterImpl();
-        ViewImpl view = new ViewImpl(presenter);
-        presenter.setView(view);
         launch();
     }
 }

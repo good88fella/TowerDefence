@@ -4,6 +4,8 @@ import com.sberstart.aux.Upgrade;
 import com.sberstart.entities.Enemy;
 import com.sberstart.entities.GameMap;
 import com.sberstart.entities.Tower;
+import com.sberstart.view.View;
+import com.sberstart.view.ViewImpl;
 
 import java.util.Collection;
 
@@ -33,4 +35,6 @@ public interface Presenter  {
     int getArmyRange();
 
     int getArmyHealth();
+
+    void setView(View view);
 }
